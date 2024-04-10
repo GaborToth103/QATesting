@@ -3,7 +3,14 @@ import os
 import urllib.request
 from llama_cpp import Llama
 
-class ModelLlama:
+class Model:
+    def __init__(self) -> None:
+        self.score = [0, 0]
+
+    def generate_text(self, prompt):
+        return prompt
+
+class ModelLlama(Model):
     def __init__(self,
                  url: str = "https://huggingface.co/NousResearch/Hermes-2-Pro-Mistral-7B-GGUF/resolve/main/Hermes-2-Pro-Mistral-7B.Q4_K_M.gguf",
                  model_path_local: str = 'models/',
@@ -67,10 +74,21 @@ class ModelLlama:
     def initalize_model():
         pass
 
-class ModelPta:
+class ModelTapas(Model):
+    # TODO
+    pass
+
+class ModelTapax(Model):
+    # TODO
+    pass
+
+class ModelTranslate(Model):
+    # TODO
     pass
 
 if __name__ == "__main__":
+    print(ModelTapas().generate_text("asd"))
+    exit()
     print(ModelLlama().generate_text(f"""<|im_start|>system
     You are an assistant that briefly answers the user's questions.<|im_end|>
     <|im_start|>user
