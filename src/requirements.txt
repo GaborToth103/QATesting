@@ -2,10 +2,9 @@ ctransformers --no-binary ctransformers
 transformers
 pandas
 numpy
-tensorflow
 sentencepiece
 sacremoses
 tensorflow_probability
 pyarrow
 fastparquet
-llama-cpp-python
+tensorflow

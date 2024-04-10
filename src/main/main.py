@@ -4,9 +4,10 @@ import load_database
 # import translate
 import logging_file
 import logging
-logging.basicConfig(filename='docs\logs.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
 import llama2
 import sqlite3
+
+logging_file.conf(file_path='docs\logs.log')
 
 class Evaluate:
     """ Evaluation class for testing different models for evaluating tables."""    
@@ -114,6 +115,6 @@ class Evaluate:
 if __name__ == "__main__":
     eva = Evaluate()
     tqa, tqb = eva.initialize_model_pipelines()
-    rows = load_database.extract()
+    rows = load_database.extract(path_to_parquet='data/0000.parquet')
     total = eva.evaluate(rows, tqa, tqb, limit=500)
     eva.print_data(total)
