@@ -4,11 +4,14 @@ import urllib.request
 from llama_cpp import Llama
 
 class Model:
-    def __init__(self, url: str, model_path_local: str = 'models/', context_length: int = 512) -> None:        
+    def __init__(self,
+                 url: str = "https://huggingface.co/NousResearch/Hermes-2-Pro-Mistral-7B-GGUF/resolve/main/Hermes-2-Pro-Mistral-7B.Q4_K_M.gguf",
+                 model_path_local: str = 'models/',
+                 context_length: int = 512) -> None:        
         self.model_path: str = self.download_file(url, model_path_local)
         self.llm: Llama = Llama(
             model_path=self.model_path,
-            n_ctx=context_length
+            n_ctx=context_length,
             n_gpu_layers=9999
         )
 
@@ -66,14 +69,7 @@ class Model:
 
 
 if __name__ == "__main__":
-    path = "models/" # path to store model files
-    example_model = "https://huggingface.co/NousResearch/Hermes-2-Pro-Mistral-7B-GGUF/resolve/main/Hermes-2-Pro-Mistral-7B.Q4_K_M.gguf"
-    example_model_small = "https://huggingface.co/MaziyarPanahi/TinyLlama-1.1B-Chat-v1.0-GGUF/resolve/main/TinyLlama-1.1B-Chat-v1.0.Q2_K.gguf"
-    prompt = f"""<|im_start|>system
+    print(Model().generate_text(f"""<|im_start|>system
     You are an assistant that briefly answers the user's questions.<|im_end|>
     <|im_start|>user
-    How many planets are there in our Solar System?<|im_end|>"""
-    path = Model.download_file(example_model, path)
-    model = Model(path)
-    output = model.generate_text(prompt)
-    print(output) # The Solar System consists of 8 planets, including Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, and Neptune. These planets orbit around the Sun, which is at the center of our solar system.
+    How many planets are there in our Solar System?<|im_end|>"""))
