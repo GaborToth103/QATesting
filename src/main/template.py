@@ -36,7 +36,7 @@ def generate_text(llm, prompt, max_tokens=512, temperature=0.1, top_p=0.5, echo=
     )
     return output["choices"][0]["text"].strip()
 
-path = "D:/models/" # path to store model files
+path = "models/" # path to store model files
 example_model = "https://huggingface.co/NousResearch/Hermes-2-Pro-Mistral-7B-GGUF/resolve/main/Hermes-2-Pro-Mistral-7B.Q4_K_M.gguf"
 example_model_small = "https://huggingface.co/MaziyarPanahi/TinyLlama-1.1B-Chat-v1.0-GGUF/resolve/main/TinyLlama-1.1B-Chat-v1.0.Q2_K.gguf"
 prompt = f"""<|im_start|>system
