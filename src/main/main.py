@@ -1,11 +1,12 @@
 from transformers import pipeline
 import pandas as pd
 import load_database
-import translate
+# import translate
 import logging_file
 import logging
 logging.basicConfig(filename='docs\logs.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
 import llama2
+import sqlite3
 
 class Evaluate:
     """ Evaluation class for testing different models for evaluating tables."""    
@@ -23,8 +24,8 @@ class Evaluate:
         Returns:
             str: the retranslated question.
         """
-        question = translate.translate_sentence(question, "hu")
-        question = translate.translate_sentence(question, "en")
+        # question = translate.translate_sentence(question, "hu")
+        # question = translate.translate_sentence(question, "en")
         return question
 
     def scoring_answers(self, answer: str, answer_a: str, answer_b: str, llama_answer: str):
@@ -64,6 +65,13 @@ class Evaluate:
         tqa = pipeline(task="table-question-answering", model=model_a)
         tqb = pipeline(task="table-question-answering", model=model_b)
         return tqa, tqb
+    
+    def check_sql_answer(self, llm_answer, true_answer):
+        connection = sqlite3.connect('data/database.db')
+        cursor = connection.cursor()
+        result = cursor.execute(llm_answer)
+        connection.close()
+        return result.fetchone() == true_answer
 
     def evaluate(self, rows, tqa, tqb, limit: int | None = None):
         """ Evaluate tables for all models. Main function.
@@ -80,14 +88,17 @@ class Evaluate:
         for index, row in enumerate(rows):
             try:
                 logging.debug(f'Current question: {index} of {len(rows)} (limit {limit})')    
-                table, question, answer = load_database.get_stuff(row)            
-                question = self.back_and_forth_translate(question)
+                table, question, answer = load_database.get_stuff(row)
+                load_database.fill_database(table)
+                # question = self.back_and_forth_translate(question)
                 answer_a: str = tqa(table=table, query=question)['cells'][0].lower().strip()
-                answer_b: str = tqb(table=table, query=question)['answer'].lower().strip()                    
+                answer_b: str = tqb(table=table, query=question)['answer'].lower().strip()                
                 red_table = llama2.reduce_table_size(table)
                 llama_answer: str = llama2.execute_steam(f"{red_table}\n{question} The answer is:")
+                if self.check_sql_answer(llama_answer, answer):
+                    print("yay")
                 self.scoring_answers(answer, answer_a, answer_b, llama_answer)
-                logging.info(f"\n{question},({answer}, {answer_a}, {answer_b}, {llama_answer}))")
+                # logging.info(f"\n{question},({answer}, {answer_a}, {answer_b}, {llama_answer}))")
                 if limit and index > limit:
                     break
             except Exception as e:

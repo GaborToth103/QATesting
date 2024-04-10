@@ -8,3 +8,4 @@ sacremoses
 tensorflow_probability
 pyarrow
 fastparquet
+llama-cpp-python

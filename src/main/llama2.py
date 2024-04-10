@@ -6,6 +6,7 @@ def stuff(token_number: int = 256, penalty: float = 1.1, temperature: float = 0.
     llm = AutoModelForCausalLM.from_pretrained('TheBloke/Llama-2-7B-chat-GGML',
                                             model_type="llama",
                                             gpu_layers=110,
+                                            local_files_only=True,
                                             **config
                                             )
     return llm
