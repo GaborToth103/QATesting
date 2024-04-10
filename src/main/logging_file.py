@@ -1,8 +1,6 @@
 import logging
 import os
 
-import os
-
 def create_file_if_not_exists(relative_path):
     # Get the current working directory
     current_directory = os.getcwd()

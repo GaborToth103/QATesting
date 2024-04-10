@@ -4,7 +4,7 @@ import load_database
 # import translate
 import logging_file
 import logging
-import template_prod
+from template_prod import ModelLlama
 import sqlite3
 
 logging_file.conf(file_path='docs\logs.log')
@@ -12,6 +12,7 @@ logging_file.conf(file_path='docs\logs.log')
 class Evaluate:
     """ Evaluation class for testing different models for evaluating tables."""    
     def __init__(self) -> None:
+        self.model = ModelLlama()
         self.score_tapas = [0, 0]    # Tapas score min-max
         self.score_tapax = [0, 0]    # Tapax score min-max
         self.score_llama = [0, 0]    # LLama2 score min-max
@@ -94,8 +95,8 @@ class Evaluate:
                 # question = self.back_and_forth_translate(question)
                 answer_a: str = tqa(table=table, query=question)['cells'][0].lower().strip()
                 answer_b: str = tqb(table=table, query=question)['answer'].lower().strip()                
-                red_table = template_prod.reduce_table_size(table)
-                llama_answer: str = template_prod.execute_steam(f"{red_table}\n{question} The answer is:")
+                red_table = self.model.reduce_table_size(table)
+                llama_answer: str = self.model.generate_text((f"{red_table}\n{question} The answer is:"))
                 if self.check_sql_answer(llama_answer, answer):
                     print("yay")
                 self.scoring_answers(answer, answer_a, answer_b, llama_answer)
@@ -115,6 +116,6 @@ class Evaluate:
 if __name__ == "__main__":
     eva = Evaluate()
     tqa, tqb = eva.initialize_model_pipelines()
-    rows = load_database.extract(path_to_parquet='data/0000.parquet')
+    rows = load_database.extract(path='data/0000.parquet')
     total = eva.evaluate(rows, tqa, tqb, limit=500)
     eva.print_data(total)

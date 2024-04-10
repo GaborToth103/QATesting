@@ -3,7 +3,7 @@ import os
 import urllib.request
 from llama_cpp import Llama
 
-class Model:
+class ModelLlama:
     def __init__(self,
                  url: str = "https://huggingface.co/NousResearch/Hermes-2-Pro-Mistral-7B-GGUF/resolve/main/Hermes-2-Pro-Mistral-7B.Q4_K_M.gguf",
                  model_path_local: str = 'models/',
@@ -67,9 +67,11 @@ class Model:
     def initalize_model():
         pass
 
+class ModelPta:
+    pass
 
 if __name__ == "__main__":
-    print(Model().generate_text(f"""<|im_start|>system
+    print(ModelLlama().generate_text(f"""<|im_start|>system
     You are an assistant that briefly answers the user's questions.<|im_end|>
     <|im_start|>user
     How many planets are there in our Solar System?<|im_end|>"""))
