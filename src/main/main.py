@@ -4,7 +4,7 @@ import load_database
 # import translate
 import logging_file
 import logging
-import llama2
+import template_prod
 import sqlite3
 
 logging_file.conf(file_path='docs\logs.log')
@@ -94,8 +94,8 @@ class Evaluate:
                 # question = self.back_and_forth_translate(question)
                 answer_a: str = tqa(table=table, query=question)['cells'][0].lower().strip()
                 answer_b: str = tqb(table=table, query=question)['answer'].lower().strip()                
-                red_table = llama2.reduce_table_size(table)
-                llama_answer: str = llama2.execute_steam(f"{red_table}\n{question} The answer is:")
+                red_table = template_prod.reduce_table_size(table)
+                llama_answer: str = template_prod.execute_steam(f"{red_table}\n{question} The answer is:")
                 if self.check_sql_answer(llama_answer, answer):
                     print("yay")
                 self.scoring_answers(answer, answer_a, answer_b, llama_answer)
