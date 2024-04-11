@@ -14,7 +14,7 @@ def download_file(url, path):
         print("File already exists.")
     return path
 
-def get_llm(path, context_length = 512, gpu_layers = 9999, cpu_threads=8):
+def get_llm(path, context_length = 512, gpu_layers = -1, cpu_threads=8):
     # Creates a Llama object
     llm = Llama(
         model_path=path,
