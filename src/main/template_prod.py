@@ -14,7 +14,8 @@ class ModelLlama(Model):
     def __init__(self,
                  url: str = "https://huggingface.co/NousResearch/Hermes-2-Pro-Mistral-7B-GGUF/resolve/main/Hermes-2-Pro-Mistral-7B.Q4_K_M.gguf",
                  model_path_local: str = 'models/',
-                 context_length: int = 512) -> None:        
+                 context_length: int = 512) -> None:
+        super().__init__()        
         self.model_path: str = self.download_file(url, model_path_local)
         self.llm: Llama = Llama(
             model_path=self.model_path,

@@ -21,8 +21,9 @@ def get_stuff(row: pd.Series):
     table = pd.DataFrame(row_list, columns=row['table']['header'])
     return table, row['question'], row['answers'][0]
 
-def fill_database(table: pd.DataFrame) -> str | None:
+def fill_database(table: pd.DataFrame, db_path = 'data/database.db') -> str | None:
     # makes an SQL table based on the pandas table
+    os.remove(db_path)
     conn = sqlite3.connect(db_path)
     table.rename(columns={'%': 'Percentage'}, inplace=True)
     table.rename(columns={'': 'Empty'}, inplace=True)
@@ -31,14 +32,12 @@ def fill_database(table: pd.DataFrame) -> str | None:
         table.to_sql(table_name, conn, if_exists='replace', index=False)
     except sqlite3.OperationalError as message:
         print(message)
-        return None
+        # return None
     conn.commit()
     conn.close()
     return table_name
 
 if __name__ == "__main__":
-    db_path = 'data/database.db'
-    os.remove(db_path)
     rows = extract('data/0000.parquet')
     for index, row in enumerate(rows):
         table, b, c =get_stuff(row)

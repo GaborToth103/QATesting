@@ -40,12 +40,13 @@ path = "models/" # path to store model files
 example_model = "https://huggingface.co/NousResearch/Hermes-2-Pro-Mistral-7B-GGUF/resolve/main/Hermes-2-Pro-Mistral-7B.Q4_K_M.gguf"
 example_model_small = "https://huggingface.co/MaziyarPanahi/TinyLlama-1.1B-Chat-v1.0-GGUF/resolve/main/TinyLlama-1.1B-Chat-v1.0.Q2_K.gguf"
 example_model_large = "https://huggingface.co/TheBloke/Mixtral-8x7B-Instruct-v0.1-GGUF/resolve/main/mixtral-8x7b-instruct-v0.1.Q4_K_M.gguf"
+example_model_new = "https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF/resolve/main/mistral-7b-instruct-v0.2.Q4_K_M.gguf" # inst prompt
 prompt = f"""<|im_start|>system
 You are an assistant that briefly answers the user's questions.<|im_end|>
 <|im_start|>user
 How many planets are there in our Solar System?<|im_end|>"""
 prompt2 = f"[INST] How many planets are there in our Solar System? [/INST]"
-path = download_file(example_model_large, path)
+path = download_file(example_model_new, path)
 llm = get_llm(path)
 output = generate_text(llm, prompt2)
 print(output) # The Solar System consists of 8 planets, including Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, and Neptune. These planets orbit around the Sun, which is at the center of our solar system.
