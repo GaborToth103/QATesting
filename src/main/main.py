@@ -84,7 +84,8 @@ class Evaluate:
                 table, question, answer = load_database.get_stuff(row)
                 load_database.fill_database(table)
                 red_table = self.model_llama.reduce_table_size(table)
-                llama_answer: str = self.model_llama.generate_text((f"{red_table}\n{question} The answer is:"))
+                llama_answer: str = self.model_llama.generate_text((f"{red_table}\n{question}\nGenerate only an SQL query!"))
+                print(llama_answer)
                 if self.check_sql_answer(llama_answer, answer):
                     print("yay")
                 self.scoring_answers(answer, llama_answer)

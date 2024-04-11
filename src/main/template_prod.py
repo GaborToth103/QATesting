@@ -12,7 +12,7 @@ class Model:
 
 class ModelLlama(Model):
     def __init__(self,
-                 url: str = "https://huggingface.co/NousResearch/Hermes-2-Pro-Mistral-7B-GGUF/resolve/main/Hermes-2-Pro-Mistral-7B.Q4_K_M.gguf",
+                 url: str = "https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF/resolve/main/mistral-7b-instruct-v0.2.Q4_K_M.gguf",
                  model_path_local: str = 'models/',
                  context_length: int = 512) -> None:
         super().__init__()        
@@ -20,7 +20,7 @@ class ModelLlama(Model):
         self.llm: Llama = Llama(
             model_path=self.model_path,
             n_ctx=context_length,
-            n_gpu_layers=9999
+            n_gpu_layers=-1
         )
 
     def download_file(self, url, path):
@@ -44,8 +44,9 @@ class ModelLlama(Model):
         )
         return llm
 
-    def generate_text(self, prompt, max_tokens=512, temperature=0.1, top_p=0.5, echo=False, stop=["#", "User:", "<|im_end|>", "[/INST]"]):
+    def generate_text(self, prompt, max_tokens=2048, temperature=0.1, top_p=0.5, echo=False, stop=["#", "User:", "<|im_end|>", "[/INST]"]):
         # Generates text from the prompt provided
+        prompt = "[INST] " + prompt + " [/INST]"
         output = self.llm(
             prompt,
             max_tokens=max_tokens,
@@ -88,7 +89,4 @@ class ModelTranslate(Model):
     pass
 
 if __name__ == "__main__":
-    print(ModelLlama().generate_text(f"""<|im_start|>system
-    You are an assistant that briefly answers the user's questions.<|im_end|>
-    <|im_start|>user
-    How many planets are there in our Solar System?<|im_end|>"""))
+    print(ModelLlama().generate_text("How many planets are there in our Solar System?"))
