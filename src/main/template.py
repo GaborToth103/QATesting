@@ -45,7 +45,7 @@ You are an assistant that briefly answers the user's questions.<|im_end|>
 <|im_start|>user
 How many planets are there in our Solar System?<|im_end|>"""
 prompt2 = f"[INST] How many planets are there in our Solar System? [/INST]"
-path = download_file(example_model, path)
+path = download_file(example_model_large, path)
 llm = get_llm(path)
-output = generate_text(llm, prompt)
+output = generate_text(llm, prompt2)
 print(output) # The Solar System consists of 8 planets, including Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, and Neptune. These planets orbit around the Sun, which is at the center of our solar system.
