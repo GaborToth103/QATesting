@@ -14,7 +14,7 @@ def download_file(url, path):
         print("File already exists.")
     return path
 
-def get_llm(path, context_length = 512, gpu_layers = -1, cpu_threads=8):
+def get_llm(path, context_length = 512, gpu_layers = -1, cpu_threads=None):
     # Creates a Llama object
     llm = Llama(
         model_path=path,
@@ -39,7 +39,7 @@ def generate_text(llm, prompt, max_tokens=512, temperature=0.1, top_p=0.5, echo=
 path = "models/" # path to store model files
 example_model = "https://huggingface.co/NousResearch/Hermes-2-Pro-Mistral-7B-GGUF/resolve/main/Hermes-2-Pro-Mistral-7B.Q4_K_M.gguf"
 example_model_small = "https://huggingface.co/MaziyarPanahi/TinyLlama-1.1B-Chat-v1.0-GGUF/resolve/main/TinyLlama-1.1B-Chat-v1.0.Q2_K.gguf"
-example_model_large = "https://huggingface.co/TheBloke/Mixtral-8x7B-Instruct-v0.1-GGUF/resolve/main/mixtral-8x7b-instruct-v0.1.Q5_K_M.gguf"
+example_model_large = "https://huggingface.co/TheBloke/Mixtral-8x7B-Instruct-v0.1-GGUF/resolve/main/mixtral-8x7b-instruct-v0.1.Q4_K_M.gguf"
 prompt = f"""<|im_start|>system
 You are an assistant that briefly answers the user's questions.<|im_end|>
 <|im_start|>user
