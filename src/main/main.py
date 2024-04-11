@@ -6,6 +6,7 @@ import logging_file
 import logging
 import template_prod
 import sqlite3
+import sys
 
 logging_file.conf(file_path='docs\logs.log')
 
@@ -84,8 +85,8 @@ class Evaluate:
                 table, question, answer = load_database.get_stuff(row)
                 load_database.fill_database(table)
                 red_table = self.model_llama.reduce_table_size(table)
-                llama_answer: str = self.model_llama.generate_text((f"{red_table}\n{question}\nGenerate only an SQL query!"))
-                print(llama_answer)
+                llama_answer: str = self.model_llama.generate_text((f"{red_table}\n{question}\n"))
+                logging.info(f'{llama_answer}, {answer}')
                 if self.check_sql_answer(llama_answer, answer):
                     print("yay")
                 self.scoring_answers(answer, llama_answer)
@@ -103,7 +104,10 @@ class Evaluate:
      
 
 if __name__ == "__main__":
+    limit = 10
+    if len(sys.argv) != 1:
+        limit = sys.argv[-1]
     eva = Evaluate()
     rows = load_database.extract(path='data/0000.parquet')
-    total = eva.evaluate(rows, limit=500)
+    total = eva.evaluate(rows, limit=10)
     eva.print_data(total)

@@ -2,6 +2,7 @@
 import os
 import urllib.request
 from llama_cpp import Llama
+import sys
 
 class Model:
     def __init__(self) -> None:
@@ -88,5 +89,6 @@ class ModelTranslate(Model):
     # TODO
     pass
 
+ 
 if __name__ == "__main__":
     print(ModelLlama().generate_text("How many planets are there in our Solar System?"))
