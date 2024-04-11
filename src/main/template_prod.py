@@ -33,7 +33,7 @@ class ModelLlama(Model):
             print("File already exists.")
         return path
     
-    def get_llm(self, context_length = 512, gpu_layers = 0, cpu_threads=None):
+    def get_llm(self, context_length = 512, gpu_layers = 9999, cpu_threads=None):
         # Creates a Llama object
         llm = Llama(
             model_path=self.model_path,
@@ -43,7 +43,7 @@ class ModelLlama(Model):
         )
         return llm
 
-    def generate_text(self, prompt, max_tokens=512, temperature=0.1, top_p=0.5, echo=False, stop=["#", "User:", "<|im_end|>"]):
+    def generate_text(self, prompt, max_tokens=512, temperature=0.1, top_p=0.5, echo=False, stop=["#", "User:", "<|im_end|>", "[/INST]"]):
         # Generates text from the prompt provided
         output = self.llm(
             prompt,
@@ -87,8 +87,6 @@ class ModelTranslate(Model):
     pass
 
 if __name__ == "__main__":
-    print(ModelTapas().generate_text("asd"))
-    exit()
     print(ModelLlama().generate_text(f"""<|im_start|>system
     You are an assistant that briefly answers the user's questions.<|im_end|>
     <|im_start|>user
