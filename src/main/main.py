@@ -3,7 +3,6 @@ from mylogger import MyLogger
 import mymodels as mymodels
 import sys
 
-log = MyLogger()
 
 class Evaluate:
     def __init__(self) -> None:
@@ -38,6 +37,7 @@ class Evaluate:
                     evaluated_count += 1
                     self.scoring_answers(answer, llama_answer, model)
                     self.print_data(evaluated_count)
+                    log.debug(limit, evaluated_count, "shared count")
                     if limit and evaluated_count > limit:
                         break
                 except Exception as e:
@@ -51,9 +51,11 @@ class Evaluate:
      
 
 if __name__ == "__main__":
+    log = MyLogger()
     limit = 10
     if len(sys.argv) != 1:
         limit = sys.argv[-1]
+    log.info(f"Script tarted, limit set to {limit}")
     eva = Evaluate()
     mydatabase = MyDatabase()
     total = eva.evaluate(mydatabase, limit=limit)
