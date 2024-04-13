@@ -30,7 +30,7 @@ class Evaluate:
                 try:
                     database.fill_database(table)
                     red_table = model.reduce_table_size(table)
-                    llama_answer: str = model.generate_text((f"{table}\n{question}\nThe short answer is:"))
+                    llama_answer: str = model.generate_text((f"{table}\n{question}\nAnswer in one word:"))
                     log.info(f'{llama_answer}, {answer}')
                     if database.check_sql_answer(llama_answer, answer):
                         print("yay")
