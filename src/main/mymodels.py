@@ -20,7 +20,7 @@ class ModelLlama(Model):
     def __init__(self,
                  url: str = "https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF/resolve/main/mistral-7b-instruct-v0.2.Q4_K_M.gguf",
                  model_folder_path: str = 'models/',
-                 context_length: int = 512) -> None:
+                 context_length: int = 2048) -> None:
         super().__init__()
         self.name: str = url.split("/")[-1]
         self.model_path: str = self.download_file(url, model_folder_path, self.name)
