@@ -21,23 +21,23 @@ class Evaluate:
         evaluated_count = 0
         for model in self.models:
             for index, row in enumerate(database.rows):
+                log.debug(f'Current question: {index} of {len(database.rows)} (limit {limit})')
                 try:
                     table, question, answer = database.get_stuff(row)
                 except Exception as e:
                     print(e)
                     continue
                 try:
-                    log.debug(f'Current question: {index} of {len(database.rows)} (limit {limit})')
                     database.fill_database(table)
                     red_table = model.reduce_table_size(table)
-                    llama_answer: str = model.generate_text((f"{table}\n{question}\nOnly the answer, no explanation. The answer:"))
+                    llama_answer: str = model.generate_text((f"{table}\n{question}\nThe short answer is:"))
                     log.info(f'{llama_answer}, {answer}')
                     if database.check_sql_answer(llama_answer, answer):
                         print("yay")
                     evaluated_count += 1
                     self.scoring_answers(answer, llama_answer, model)
                     self.print_data(evaluated_count)
-                    log.debug(limit, evaluated_count, "shared count")
+                    log.debug(f"shared count {limit}, {evaluated_count}")
                     if limit and evaluated_count > limit:
                         break
                 except Exception as e:
