@@ -54,5 +54,5 @@ if __name__ == "__main__":
         limit = sys.argv[-1]
     eva = Evaluate()
     mydatabase = MyDatabase()
-    total = eva.evaluate(mydatabase, limit=10)
+    total = eva.evaluate(mydatabase, limit=limit)
     eva.print_data(total)
