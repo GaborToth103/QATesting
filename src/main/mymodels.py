@@ -54,7 +54,7 @@ class ModelLlama(Model):
         )
         return llm
 
-    def generate_text(self, prompt, max_tokens=2048, temperature=0.1, top_p=0.5, echo=False, stop=["#", "<|im_end|>"]):
+    def generate_text(self, prompt, max_tokens=2048, temperature=0.1, top_p=0.5, echo=False, stop=["#", "<|im_end|>", "\n", "."]):
         # Generates text from the prompt provided
         prompt = "[INST] " + prompt + " [/INST]"
         output = self.model(

@@ -29,7 +29,7 @@ class Evaluate:
                     continue
                 try:
                     database.fill_database(table)
-                    red_table = model.reduce_table_size(table)
+                    # red_table = model.reduce_table_size(table)
                     llama_answer: str = model.generate_text((f"{table}\n{question}\nAnswer in one word:"))
                     log.info(f'{llama_answer}, {answer}')
                     if database.check_sql_answer(llama_answer, answer):
@@ -53,8 +53,8 @@ class Evaluate:
 if __name__ == "__main__":
     log = MyLogger()
     limit = 10
-    if len(sys.argv) != 1:
-        limit = sys.argv[-1]
+    if len(sys.argv) != 1 and sys.argv[-1].isdigit:
+        limit = int(sys.argv[-1])
     log.info(f"Script tarted, limit set to {limit}")
     eva = Evaluate()
     mydatabase = MyDatabase()
