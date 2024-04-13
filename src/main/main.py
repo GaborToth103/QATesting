@@ -30,7 +30,7 @@ class Evaluate:
                     log.debug(f'Current question: {index} of {len(database.rows)} (limit {limit})')
                     database.fill_database(table)
                     red_table = model.reduce_table_size(table)
-                    llama_answer: str = model.generate_text((f"{red_table}\n{question}\nOnly the answer, no explanation. The answer:"))
+                    llama_answer: str = model.generate_text((f"{table}\n{question}\nOnly the answer, no explanation. The answer:"))
                     log.info(f'{llama_answer}, {answer}')
                     if database.check_sql_answer(llama_answer, answer):
                         print("yay")
