@@ -19,6 +19,7 @@ class Evaluate:
             log.debug(f'Llama score updated: {self.model_llama.score}')
     
     def evaluate(self, database: MyDatabase, limit: int | None = None):
+        evaluated_count = 0
         for model in self.models:
             for index, row in enumerate(database.rows):
                 try:
@@ -34,13 +35,14 @@ class Evaluate:
                     log.info(f'{llama_answer}, {answer}')
                     if database.check_sql_answer(llama_answer, answer):
                         print("yay")
+                    evaluated_count += 1
                     self.scoring_answers(answer, llama_answer, model)
-                    self.print_data(index)
-                    if limit and index > limit:
+                    self.print_data(evaluated_count)
+                    if limit and evaluated_count > limit:
                         break
                 except Exception as e:
                     log.warning(e)
-        return index
+        return evaluated_count
 
     def print_data(self, total):
         message = f"scores from {total}: llama({(self.model_llama.score[0] * 100 / total):.0f}%)"
