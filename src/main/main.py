@@ -37,7 +37,6 @@ class Evaluate:
                     evaluated_count += 1
                     self.scoring_answers(answer, llama_answer, model)
                     self.print_data(evaluated_count)
-                    log.debug(f"shared count {limit}, {evaluated_count}")
                     if limit and evaluated_count > limit:
                         break
                 except Exception as e:
