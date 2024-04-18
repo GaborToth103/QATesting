@@ -1,3 +1,4 @@
+# Hugging face API test
 import requests
 API_TOKEN = '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'
 API_URL = "https://api-inference.huggingface.co/models/gpt2"

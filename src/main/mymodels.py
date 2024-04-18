@@ -1,8 +1,8 @@
-from transformers import pipeline
-import os
+from transformers import AutoTokenizer, AutoModelForTableQuestionAnswering, TapexTokenizer, BartForConditionalGeneration, AutoModelForSeq2SeqLM
 import urllib.request
 from llama_cpp import Llama
-import sys
+import os
+import pandas as pd
 
 class Model:
     def __init__(self, url: str = "None/None") -> None:
@@ -10,7 +10,8 @@ class Model:
         self.model = None
         self.name: str = url.split("/")[-1]
 
-    def generate_text(self, prompt):
+    def generate_text(self, table: pd.DataFrame, question: str) -> str:
+        prompt = f"{table}\n{question}\nBase model answer."
         return prompt
     
     def __str__(self) -> str:
@@ -54,16 +55,15 @@ class ModelLlama(Model):
         )
         return llm
 
-    def generate_text(self, prompt, max_tokens=2048, temperature=0.1, top_p=0.5, echo=False, stop=["#", "<|im_end|>", "\n", "."]):
-        # Generates text from the prompt provided
-        prompt = "[INST] " + prompt + " [/INST]"
+    def generate_text(self, table: pd.DataFrame, question: str) -> str:
+        prompt = f"[INST] {table}\n{question}\nAnswer in one word: [/INST]"
         output = self.model(
             prompt,
-            max_tokens=max_tokens,
-            temperature=temperature,
-            top_p=top_p,
-            echo=echo,
-            stop=stop,
+            max_tokens=2048,
+            temperature=0.1,
+            top_p=0.5,
+            echo=False,
+            stop=["#", "<|im_end|>", "\n", "."],
         )
         return output["choices"][0]["text"].strip()
 
@@ -88,27 +88,57 @@ class ModelLlama(Model):
 
 class ModelTapas(Model):
     def __init__(self, url: str = "google/tapas-base-finetuned-wtq") -> None:
-        super().__init__()        
-        self.model = pipeline(task="table-question-answering", model=url)
-        self.name = url
+        super().__init__()
+        self.tokenizer = AutoTokenizer.from_pretrained(url)
+        self.model = AutoModelForTableQuestionAnswering.from_pretrained(url)
 
-class ModelTapax(Model):
+    def generate_text(self, table: pd.DataFrame, question: str) -> str:
+        inputs = self.tokenizer(table=table, queries=[question], padding="max_length", return_tensors="pt")
+        outputs = self.model(**inputs)
+        predicted_answer_coordinates = self.tokenizer.convert_logits_to_predictions(inputs, outputs.logits.detach(), outputs.logits_aggregation.detach())[0][0]
+        return table.iat[predicted_answer_coordinates[0]]
+
+class ModelTapex(Model):
     def __init__(self, url: str = "microsoft/tapex-base-finetuned-wtq") -> None:
         super().__init__(url)
-        self.model = pipeline(task="table-question-answering", model=url)
-        self.name = url
+        self.tokenizer = AutoTokenizer.from_pretrained(url)
+        self.model = BartForConditionalGeneration.from_pretrained(url)
+
+    def generate_text(self, table, question: str):
+        inputs = self.tokenizer(table=table, query=question, return_tensors="pt")
+        outputs = self.model.generate(**inputs)
+        return self.tokenizer.batch_decode(outputs, skip_special_tokens=True)[0]
 
 class ModelTranslate(Model):
-    def __init__(self, url: str = "") -> None:
+    def __init__(self, url: str = "Helsinki-NLP/opus-mt-en-hu", url2: str = "Helsinki-NLP/opus-mt-hu_en") -> None:
         super().__init__(url)
-        self.pipe_en_hu = pipeline("translation", model="Helsinki-NLP/opus-mt-tc-big-en-hu")
-        self.pipe_hu_en = pipeline("translation", model="Helsinki-NLP/opus-mt-tc-big-hu-en")
+        self.tokenizer = AutoTokenizer.from_pretrained(url, cache_dir="models")
+        self.model = AutoModelForSeq2SeqLM.from_pretrained(url, cache_dir="models")
+        self.tokenizer2 = AutoTokenizer.from_pretrained(url2)
+        self.model2 = AutoModelForSeq2SeqLM.from_pretrained(url2)
+
+        model_dir="./models/models--Helsinki-NLP--opus-mt-en-hu"
+        _ = self.model.save_pretrained(model_dir)
+        _ = self.tokenizer.save_pretrained(model_dir)
+
+        model_dir2="./models/models--Helsinki-NLP--opus-mt-hu-en"
+        _ = self.model2.save_pretrained(model_dir2)
+        _ = self.tokenizer2.save_pretrained(model_dir2)
+
+        self.tokenizer = AutoTokenizer.from_pretrained(model_dir)
+        self.model = AutoModelForSeq2SeqLM.from_pretrained(model_dir)
+        self.tokenizer2 = AutoTokenizer.from_pretrained(model_dir2)
+        self.model2 = AutoModelForSeq2SeqLM.from_pretrained(model_dir2)
 
     def translate_sentence(self, sentence: str, target: str = "hu"):
-        if target == "hu":
-            return self.pipe_en_hu(sentence)[0]['translation_text']
-        return self.pipe_hu_en(sentence)[0]['translation_text']
-
+        tokenizer = self.tokenizer
+        model = self.model
+        if target == "en":
+            tokenizer = self.tokenizer2
+            model = self.model2
+        inputs= tokenizer([sentence], return_tensors="pt")
+        generated_ids = model.generate(**inputs)
+        return self.tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0]
 
     def back_and_forth_translate(self, question: str) -> str:
         """ Translating an english text to hungarian and back to english to simulate hungarian text being solved by these english only models.
@@ -124,4 +154,10 @@ class ModelTranslate(Model):
         return question
     
 if __name__ == "__main__":
-    print(ModelLlama().generate_text("How many planets are there in our Solar System?"))
+    print(ModelTranslate().translate_sentence("Where's the bus stop?", target="hu"))
+    print(
+        ModelTapex().generate_text(
+            pd.DataFrame(),
+            "Is this an empty table?"
+        )
+    )

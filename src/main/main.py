@@ -6,7 +6,7 @@ import sys
 
 class Evaluate:
     def __init__(self) -> None:
-        self.model_llama = mymodels.ModelLlama()
+        self.model_llama = mymodels.ModelTapas() # FIXME modified from LLama
         self.models = [self.model_llama]
 
     def scoring_answers(self, answer: str, llama_answer: str, model: mymodels.Model):
@@ -29,13 +29,12 @@ class Evaluate:
                     continue
                 try:
                     database.fill_database(table)
-                    # red_table = model.reduce_table_size(table)
-                    llama_answer: str = model.generate_text((f"{table}\n{question}\nAnswer in one word:"))
-                    log.info(f'{llama_answer}, {answer}')
-                    if database.check_sql_answer(llama_answer, answer):
+                    answer: str = model.generate_text(table, question)
+                    log.info(f'{answer}, {answer}')
+                    if database.check_sql_answer(answer, answer):
                         print("yay")
                     evaluated_count += 1
-                    self.scoring_answers(answer, llama_answer, model)
+                    self.scoring_answers(answer, answer, model)
                     self.print_data(evaluated_count)
                     if limit and evaluated_count > limit:
                         break

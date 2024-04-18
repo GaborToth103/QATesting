@@ -1,3 +1,4 @@
+# Transformer API test
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 device = "cuda" # the device to load the model onto
