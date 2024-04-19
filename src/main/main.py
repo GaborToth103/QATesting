@@ -16,7 +16,7 @@ class Evaluate:
                 model.score[0] += 1
                 model.score[1] += 1
             model.score[1] += 1
-            log.debug(f'Llama score updated: {self.model_llama.score}')
+        log.debug(f'Llama score updated: {self.model_llama.score}')
     
     def evaluate(self, database: MyDatabase, limit: int | None = None):
         evaluated_count = 0
@@ -24,18 +24,18 @@ class Evaluate:
             for index, row in enumerate(database.rows):
                 log.debug(f'Current question: {index} of {len(database.rows)} (limit {limit})')
                 try:
-                    table, question, answer = database.get_stuff(row)
+                    table, question, truth = database.get_stuff(row)
                 except Exception as e:
                     print(e)
                     continue
                 try:
                     database.fill_database(table)
-                    answer: str = model.generate_text(table, question)
-                    log.info(f'{answer}, {answer}')
-                    if database.check_sql_answer(answer, answer):
+                    model_answer: str = model.generate_text(table, question)
+                    log.info(f'{question}: {truth}, {model_answer}')
+                    if database.check_sql_answer(model_answer, truth):
                         print("yay")
                     evaluated_count += 1
-                    self.scoring_answers(answer, answer, model)
+                    self.scoring_answers(truth, model_answer, model)
                     log.info(f"Scores from {evaluated_count}: llama({(self.model_llama.score[0] * 100 / evaluated_count):.0f}%)")
                     if limit and evaluated_count >= limit:
                         break
@@ -45,7 +45,7 @@ class Evaluate:
 
 if __name__ == "__main__":
     log = MyLogger()
-    limit = 10
+    limit = 50
     if len(sys.argv) != 1 and sys.argv[-1].isdigit:
         limit = int(sys.argv[-1])
     log.info(f"Script started, limit set to {limit}")

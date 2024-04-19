@@ -46,7 +46,7 @@ class ModelLlama(Model):
         return path
 
     def generate_text(self, table: pd.DataFrame, question: str) -> str:
-        prompt = f"{table}\n{question}\nAnswer in one word:"
+        prompt = f"{table}\nIn one word, {question}\n"
         output = self.model(
             prompt,
             max_tokens=2048,
