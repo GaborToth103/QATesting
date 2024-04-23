@@ -1,8 +1,9 @@
-from transformers import AutoTokenizer, AutoModelForTableQuestionAnswering, BartForConditionalGeneration, AutoModelForSeq2SeqLM
+from transformers import AutoTokenizer, AutoModelForTableQuestionAnswering, BartForConditionalGeneration, AutoModelForSeq2SeqLM, AutoModelForCausalLM
 import urllib.request
 from llama_cpp import Llama
 import os
 import pandas as pd
+import torch
 
 class Model:
     def __init__(self, url: str = "None/None") -> None:
@@ -16,6 +17,46 @@ class Model:
     
     def __str__(self) -> str:
         return self.name
+
+class ModelLlama3(Model):
+    def __init__(self, url: str = "None/None") -> None:
+        super().__init__(url)
+        model_id = "meta-llama/Meta-Llama-3-8B-Instruct"
+
+        tokenizer = AutoTokenizer.from_pretrained(model_id)
+        model = AutoModelForCausalLM.from_pretrained(
+            model_id,
+            torch_dtype=torch.bfloat16,
+            device_map="auto",
+        )
+
+        messages = [
+            {"role": "system", "content": "You are a pirate chatbot who always responds in pirate speak!"},
+            {"role": "user", "content": "Who are you?"},
+        ]
+
+        input_ids = tokenizer.apply_chat_template(
+            messages,
+            add_generation_prompt=True,
+            return_tensors="pt"
+        ).to(model.device)
+
+        terminators = [
+            tokenizer.eos_token_id,
+            tokenizer.convert_tokens_to_ids("<|eot_id|>")
+        ]
+
+        outputs = model.generate(
+            input_ids,
+            max_new_tokens=256,
+            eos_token_id=terminators,
+            do_sample=True,
+            temperature=0.6,
+            top_p=0.9,
+        )
+        response = outputs[0][input_ids.shape[-1]:]
+        print(tokenizer.decode(response, skip_special_tokens=True))
+
 
 class ModelLlama(Model):
     def __init__(self,
@@ -46,7 +87,7 @@ class ModelLlama(Model):
         return path
 
     def generate_text(self, table: pd.DataFrame, question: str) -> str:
-        prompt = f"{table}\nIn one word, {question}\n"
+        prompt = f"{table}\n{question}\n In one word, the answer is:"
         output = self.model(
             prompt,
             max_tokens=2048,
@@ -144,6 +185,8 @@ class ModelTranslate(Model):
         return question
     
 if __name__ == "__main__":
+    ModelLlama3()
+    exit()
     print(
         ModelLlama().generate_text(
             pd.DataFrame(),
