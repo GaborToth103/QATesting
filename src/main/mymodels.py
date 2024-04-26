@@ -1,4 +1,4 @@
-from transformers import AutoTokenizer, AutoModelForTableQuestionAnswering, BartForConditionalGeneration, AutoModelForSeq2SeqLM, AutoModelForCausalLM
+from transformers import pipeline, AutoTokenizer, AutoModelForTableQuestionAnswering, BartForConditionalGeneration, AutoModelForSeq2SeqLM, AutoModelForCausalLM
 import urllib.request
 from llama_cpp import Llama
 import os
@@ -56,7 +56,6 @@ class ModelLlama3(Model):
         )
         response = outputs[0][input_ids.shape[-1]:]
         print(tokenizer.decode(response, skip_special_tokens=True))
-
 
 class ModelLlama(Model):
     def __init__(self,
@@ -169,7 +168,7 @@ class ModelTranslate(Model):
             model = self.model2
         inputs= tokenizer([sentence], return_tensors="pt")
         generated_ids = model.generate(**inputs)
-        return self.tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0]
+        return tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0]
 
     def back_and_forth_translate(self, question: str) -> str:
         """ Translating an english text to hungarian and back to english to simulate hungarian text being solved by these english only models.
@@ -184,12 +183,25 @@ class ModelTranslate(Model):
         question = self.translate_sentence(question, "en")
         return question
     
+class ModelHungarian(Model):
+    def __init__(self, url: str = "sambanovasystems/SambaLingo-Hungarian-Chat") -> None:
+        super().__init__(url)
+        self.tokenizer = AutoTokenizer.from_pretrained(url, use_fast=False)
+        self.model = AutoModelForCausalLM.from_pretrained(url, device_map="auto", torch_dtype="auto")
+
+    def generate_text(self, table: pd.DataFrame, question: str) -> str:
+        from transformers import pipeline
+        pipe = pipeline("text-generation", model="sambanovasystems/SambaLingo-Hungarian-Chat", device_map="auto", use_fast=False)
+        messages = [
+                        {"role": "user", "content": {question}},
+        ]
+        prompt = pipe.tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+        outputs = pipe(prompt)[0]
+        outputs = outputs["generated_text"]
+        print(outputs)
+
 if __name__ == "__main__":
-    ModelLlama3()
-    exit()
-    print(
-        ModelLlama().generate_text(
-            pd.DataFrame(),
-            "How many planets are there in our Solar System?"
-        )
-    )
+    model = ModelHungarian()
+    print("yay")
+    returned = model.generate_text(pd.DataFrame(),"<|user|>\nMi a jelentőssége a magyar szürkemarhának?</s>\n<|assistant|>\n")
+    print(returned)
