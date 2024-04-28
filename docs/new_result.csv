@@ -1,0 +1,5 @@
+Date;Model name;Data name;Quant;Table Count;Minimum precision;Maximum precision;Duration (seconds)
+2024.04.12;Example Model;Example Data;8;456;0.95;0.98;123.45
+2024.04.12;Example Model;Example Data;8;456;0.95;0.98;123.45
+2024-04-12;Example Model;Example Data;8;456;0.95;0.98;123.45
+2024-04-12;Example Model;Example Data;8;456;0.95;0.98;123.45

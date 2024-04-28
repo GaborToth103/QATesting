@@ -1,4 +1,6 @@
 Date;Model name;Data name;Seed count;Table Count;Minimum precision;Maximum precision;Duration (seconds)
-2024.04.12;Example Model;Example Data;123;456;0.95;0.98;123.45
-2024.04.12;Example Model;Example Data;123;456;0.95;0.98;123.452024-04-12;Example Model;Example Data;123;456;0.95;0.98;123.45
-2024-04-12;Example Model;Example Data;123;456;0.95;0.98;123.45
+today;openbiollm-llama3-8b.Q8_0.gguf;parquet;;100;16%;24%;0
+today;dolphin-2.9-llama3-8b-q8_0.gguf;parquet;;100;8%;27%;0
+today;SambaLingo-Hungarian-Chat-Q8_0.gguf;parquet;;100;0%;13%;0
+today;Meta-Llama-3-8B-Instruct.Q8_0.gguf;parquet;;100;2%;33%;0
+today;Phi-3-mini-4k-instruct-fp16.gguf;parquet;;100;19%;16%;0

@@ -1,18 +1,6 @@
-ctransformers --no-binary ctransformers
-transformers
+llama-cpp-python # CMAKE_ARGS="-DLLAMA_CUBLAS=on -DCMAKE_CUDA_ARCHITECTURES=all-major" FORCE_CMAKE=1 pip install llama-cpp-python --no-cache-dir --force-reinstall --upgrade
 pandas
-numpy
-sentencepiece
-sacremoses
-tensorflow_probability
+
+# for reading parquet
 pyarrow
 fastparquet
-tensorflow
-llama-cpp-python
-accelerate
-
---extra-index-url https://download.pytorch.org/whl/cpu
-torch
-torchvision
-torchaudio
-

@@ -32,7 +32,7 @@ class MyLogger(logging.getLoggerClass()):
                 with open(file=file_path, mode="w"):
                     pass
             else:
-                row = pd.DataFrame(None, columns=["Date", "Model name", "Data name", "Seed count", 
+                row = pd.DataFrame(None, columns=["Date", "Model name", "Data name", "Quant", 
                                                     "Table Count", "Minimum precision", "Maximum precision", 
                                                     "Duration (seconds)"])
                 row.to_csv(file_path, mode='x', header=True, index=False, sep=";")  # Append row to the CSV file without writing headers
@@ -46,7 +46,7 @@ class MyLogger(logging.getLoggerClass()):
 
 
 
-        row = pd.DataFrame([data_to_append], columns=["Date", "Model name", "Data name", "Seed count", 
+        row = pd.DataFrame([data_to_append], columns=["Date", "Model name", "Data name", "Quant", 
                                             "Table Count", "Minimum precision", "Maximum precision", 
                                             "Duration (seconds)"])
 
@@ -59,7 +59,7 @@ if __name__ == "__main__":
     "Date": "2024-04-12",
     "Model name": "Example Model",
     "Data name": "Example Data",
-    "Seed count": 123,
+    "Quant": 8,
     "Table Count": 456,
     "Minimum precision": 0.95,
     "Maximum precision": 0.98,

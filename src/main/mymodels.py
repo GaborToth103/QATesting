@@ -1,9 +1,7 @@
-from transformers import pipeline, AutoTokenizer, AutoModelForTableQuestionAnswering, BartForConditionalGeneration, AutoModelForSeq2SeqLM, AutoModelForCausalLM
 import urllib.request
 from llama_cpp import Llama
 import os
 import pandas as pd
-import torch
 
 class Model:
     def __init__(self, url: str = "None/None") -> None:
@@ -18,50 +16,11 @@ class Model:
     def __str__(self) -> str:
         return self.name
 
-class ModelLlama3(Model):
-    def __init__(self, url: str = "None/None") -> None:
-        super().__init__(url)
-        model_id = "meta-llama/Meta-Llama-3-8B-Instruct"
-
-        tokenizer = AutoTokenizer.from_pretrained(model_id)
-        model = AutoModelForCausalLM.from_pretrained(
-            model_id,
-            torch_dtype=torch.bfloat16,
-            device_map="auto",
-        )
-
-        messages = [
-            {"role": "system", "content": "You are a pirate chatbot who always responds in pirate speak!"},
-            {"role": "user", "content": "Who are you?"},
-        ]
-
-        input_ids = tokenizer.apply_chat_template(
-            messages,
-            add_generation_prompt=True,
-            return_tensors="pt"
-        ).to(model.device)
-
-        terminators = [
-            tokenizer.eos_token_id,
-            tokenizer.convert_tokens_to_ids("<|eot_id|>")
-        ]
-
-        outputs = model.generate(
-            input_ids,
-            max_new_tokens=256,
-            eos_token_id=terminators,
-            do_sample=True,
-            temperature=0.6,
-            top_p=0.9,
-        )
-        response = outputs[0][input_ids.shape[-1]:]
-        print(tokenizer.decode(response, skip_special_tokens=True))
-
 class ModelLlama(Model):
     def __init__(self,
                  url: str = "https://huggingface.co/QuantFactory/Meta-Llama-3-8B-Instruct-GGUF/resolve/main/Meta-Llama-3-8B-Instruct.Q4_K_M.gguf",
                  model_folder_path: str = 'models/',
-                 context_length: int = 8192) -> None:
+                 context_length: int = 4096) -> None:
         super().__init__()
         self.name: str = url.split("/")[-1]
         self.model_path: str = self.download_file(url, model_folder_path, self.name)
@@ -72,28 +31,32 @@ class ModelLlama(Model):
         )
 
     @staticmethod
-    def download_file(url, folder_name, file_name):
-        # Dowloading GGUF model from HuggingFace, checks if the file already exists before downloading
-        path = folder_name + file_name
-        if not os.path.exists(folder_name):
-            os.makedirs(folder_name)
-        if not os.path.isfile(path):
-            print("Downloading model...")
-            urllib.request.urlretrieve(url, path)
-            print("File downloaded successfully.")
-        else:
-            print("File already exists.")
-        return path
+    def download_file(url: str, folder_path: str, name: str) -> str:
+        """Dowloading GGUF model from HuggingFace, checks if the file already exists before downloading.
+
+        Args:
+            url (str): URL to the HuggingFace gguf file.
+            folder_path (str): The relative or absolute folder path.
+
+        Returns:
+            str: The absolute local file path.
+        """
+        file_path = folder_path + name
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path)
+        if not os.path.isfile(file_path):
+            print(f"Downloading model to {file_path} now.")
+            urllib.request.urlretrieve(url, file_path)
+            print(f"File downloaded successfully to {file_path}")
+        return file_path
 
     def generate_text(self, table: pd.DataFrame, question: str) -> str:
-        prompt = f"{table}\n{question}\n In one word, the answer is:"
+        prompt = f"{table}\n{question}\n The answer in one word: "
         output = self.model(
             prompt,
-            max_tokens=2048,
-            temperature=0.1,
-            top_p=0.5,
+            max_tokens=4096,
             echo=False,
-            stop=["#", "<|im_end|>", "\n", "."],
+            stop=["<|", "\n"],
         )
         return output["choices"][0]["text"].strip()
 
@@ -183,25 +146,17 @@ class ModelTranslate(Model):
         question = self.translate_sentence(question, "en")
         return question
     
-class ModelHungarian(Model):
-    def __init__(self, url: str = "sambanovasystems/SambaLingo-Hungarian-Chat") -> None:
-        super().__init__(url)
-        self.tokenizer = AutoTokenizer.from_pretrained(url, use_fast=False)
-        self.model = AutoModelForCausalLM.from_pretrained(url, device_map="auto", torch_dtype="auto")
-
-    def generate_text(self, table: pd.DataFrame, question: str) -> str:
-        from transformers import pipeline
-        pipe = pipeline("text-generation", model="sambanovasystems/SambaLingo-Hungarian-Chat", device_map="auto", use_fast=False)
-        messages = [
-                        {"role": "user", "content": {question}},
-        ]
-        prompt = pipe.tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
-        outputs = pipe(prompt)[0]
-        outputs = outputs["generated_text"]
-        print(outputs)
-
 if __name__ == "__main__":
-    model = ModelHungarian()
-    print("yay")
-    returned = model.generate_text(pd.DataFrame(),"<|user|>\nMi a jelentőssége a magyar szürkemarhának?</s>\n<|assistant|>\n")
-    print(returned)
+    folder_path = "models/"
+    prompt = f"""<|im_start|>system
+    You are an assistant that briefly answers the user's questions.<|im_end|>
+    <|im_start|>user
+    How many planets are there in our Solar System? Write only the correct number!<|im_end|>
+    <|im_start|>assistant
+    """
+    with open('data/model_list.txt', 'r') as file:
+        model_urls = [line.strip() for line in file.readlines()]        
+    for index, model_url in enumerate(model_urls):
+        model = ModelLlama(url=model_url)
+        answer = model.generate_text(pd.DataFrame(),prompt)
+        print(answer)
