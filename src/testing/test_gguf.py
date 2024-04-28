@@ -2,7 +2,7 @@
 import os
 import urllib.request
 from llama_cpp import Llama
-import decorators
+import main.decorators as decorators
 
 def download_file(url: str, folder_path: str) -> str:
     """Dowloading GGUF model from HuggingFace, checks if the file already exists before downloading.

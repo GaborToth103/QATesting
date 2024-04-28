@@ -1,6 +1,7 @@
-Date;Model name;Data name;Seed count;Table Count;Minimum precision;Maximum precision;Duration (seconds)
-today;openbiollm-llama3-8b.Q8_0.gguf;parquet;;100;16%;24%;0
-today;dolphin-2.9-llama3-8b-q8_0.gguf;parquet;;100;8%;27%;0
-today;SambaLingo-Hungarian-Chat-Q8_0.gguf;parquet;;100;0%;13%;0
-today;Meta-Llama-3-8B-Instruct.Q8_0.gguf;parquet;;100;2%;33%;0
-today;Phi-3-mini-4k-instruct-fp16.gguf;parquet;;100;19%;16%;0
+Date;Model name;Data name;Seed count;Table count;Minimum precision;Maximum precision;Duration (seconds)
+2024-04-28 18:31:17;Phi-3-mini-4k-instruct-fp16.gguf;parquet;1;100;23%;20%;79
+2024-04-28 18:32:14;SambaLingo-Hungarian-Chat-Q8_0.gguf;parquet;1;100;11%;12%;57
+2024-04-28 18:33:38;Meta-Llama-3-8B-Instruct.Q8_0.gguf;parquet;1;100;24%;25%;84
+2024-04-28 18:35:03;openbiollm-llama3-8b.Q8_0.gguf;parquet;1;100;26%;27%;85
+2024-04-28 18:36:25;dolphin-2.9-llama3-8b-q8_0.gguf;parquet;1;100;35%;29%;82
+2024-04-28 19:02:59;Meta-Llama-3-70B-Instruct.Q4_K_M.gguf;parquet;1;100;45%;33%;885

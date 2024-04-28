@@ -20,14 +20,15 @@ class ModelLlama(Model):
     def __init__(self,
                  url: str = "https://huggingface.co/QuantFactory/Meta-Llama-3-8B-Instruct-GGUF/resolve/main/Meta-Llama-3-8B-Instruct.Q4_K_M.gguf",
                  model_folder_path: str = 'models/',
-                 context_length: int = 4096) -> None:
+                 context_length: int = 4096, n_gpu_layers=-1) -> None:
         super().__init__()
         self.name: str = url.split("/")[-1]
         self.model_path: str = self.download_file(url, model_folder_path, self.name)
         self.model: Llama = Llama(
             model_path=self.model_path,
             n_ctx=context_length,
-            n_gpu_layers=-1
+            n_gpu_layers=n_gpu_layers,
+            n_threads=8,
         )
 
     @staticmethod
@@ -147,16 +148,16 @@ class ModelTranslate(Model):
         return question
     
 if __name__ == "__main__":
-    folder_path = "models/"
+    path = 'data/model_list.csv'
     prompt = f"""<|im_start|>system
     You are an assistant that briefly answers the user's questions.<|im_end|>
     <|im_start|>user
     How many planets are there in our Solar System? Write only the correct number!<|im_end|>
     <|im_start|>assistant
     """
-    with open('data/model_list.txt', 'r') as file:
-        model_urls = [line.strip() for line in file.readlines()]        
-    for index, model_url in enumerate(model_urls):
-        model = ModelLlama(url=model_url)
+    df = pd.read_csv(path, index_col=0)
+    for index, row in df.iterrows():
+        print()
+        model = ModelLlama(url=row['URL'], n_gpu_layers=row['Layer offset count'])
         answer = model.generate_text(pd.DataFrame(),prompt)
         print(answer)

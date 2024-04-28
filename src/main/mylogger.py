@@ -32,8 +32,8 @@ class MyLogger(logging.getLoggerClass()):
                 with open(file=file_path, mode="w"):
                     pass
             else:
-                row = pd.DataFrame(None, columns=["Date", "Model name", "Data name", "Quant", 
-                                                    "Table Count", "Minimum precision", "Maximum precision", 
+                row = pd.DataFrame(None, columns=["Date", "Model name", "Data name", "Seed count", 
+                                                    "Table count", "Minimum precision", "Maximum precision", 
                                                     "Duration (seconds)"])
                 row.to_csv(file_path, mode='x', header=True, index=False, sep=";")  # Append row to the CSV file without writing headers
             print(f"File {file_path} created.")
@@ -46,8 +46,8 @@ class MyLogger(logging.getLoggerClass()):
 
 
 
-        row = pd.DataFrame([data_to_append], columns=["Date", "Model name", "Data name", "Quant", 
-                                            "Table Count", "Minimum precision", "Maximum precision", 
+        row = pd.DataFrame([data_to_append], columns=["Date", "Model name", "Data name", "Seed count", 
+                                            "Table count", "Minimum precision", "Maximum precision", 
                                             "Duration (seconds)"])
 
         row.to_csv(path, mode='a', header=False, index=False, sep=";")  # Append row to the CSV file without writing headers
@@ -59,8 +59,8 @@ if __name__ == "__main__":
     "Date": "2024-04-12",
     "Model name": "Example Model",
     "Data name": "Example Data",
-    "Quant": 8,
-    "Table Count": 456,
+    "Seed count": 8,
+    "Table count": 456,
     "Minimum precision": 0.95,
     "Maximum precision": 0.98,
     "Duration (seconds)": 123.45
