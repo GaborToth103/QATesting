@@ -49,6 +49,7 @@ class Evaluate:
         min_accuracy = 1
         max_accuracy = 0
         for seed_index in range(seed_count):
+            self.model.score = [0, 0]
             evaluated_count = 0
             for index, row in enumerate(self.mydatabase.rows):
                 self.log.debug(f'Current question: {index} of {len(self.mydatabase.rows)} (limit {self.limit})')
@@ -63,12 +64,12 @@ class Evaluate:
                     self.log.info(f'{question}: {truth}, {model_answer}')
                     evaluated_count += 1
                     self.scoring(truth, model_answer)
-                    self.log.info(f"Scores from {evaluated_count}: llama({(self.model.score[1] * 100 / evaluated_count):.0f}%)")
+                    self.log.info(f"Scores from {evaluated_count}: llama({(self.model.score[0] * 100 / evaluated_count):.0f}%)")
                     if self.limit and evaluated_count >= self.limit:
                         break
                 except Exception as e:
                     self.log.error(e)
-            score = self.model.score[1] / evaluated_count
+            score = self.model.score[0] / evaluated_count
             max_accuracy = max(score, max_accuracy)
             min_accuracy = min(score, min_accuracy)
         result: dict = {
@@ -85,4 +86,4 @@ class Evaluate:
             self.log.logging_results(str(self.model), "parquet", seed_count, evaluation_result['evaluated_count'], evaluation_result['min_accuracy'], evaluation_result['max_accuracy'], elapsed_time)
 
 if __name__ == "__main__":
-    Evaluate(model_list_path='data/model_list.csv', limit=100).iterate(seed_count=1)
+    Evaluate(model_list_path='data/model_list.csv', limit=10).iterate(seed_count=3)
