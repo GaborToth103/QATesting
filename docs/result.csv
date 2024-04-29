@@ -5,3 +5,9 @@ Date;Model name;Data name;Seed count;Table count;Minimum precision;Maximum preci
 2024-04-28 18:35:03;openbiollm-llama3-8b.Q8_0.gguf;parquet;1;100;26%;27%;85
 2024-04-28 18:36:25;dolphin-2.9-llama3-8b-q8_0.gguf;parquet;1;100;35%;29%;82
 2024-04-28 19:02:59;Meta-Llama-3-70B-Instruct.Q4_K_M.gguf;parquet;1;100;45%;33%;885
+2024-04-28 19:55:03;Phi-3-mini-4k-instruct-fp16.gguf;parquet;1;4170;20%;17%;987
+2024-04-29 06:52:51;llama-2-7b-32k-instruct.Q8_0.gguf;parquet;1;100;10%;22%;60
+2024-04-29 07:50:23;llama-2-7b-32k-instruct.Q8_0.gguf;parquet;1;100;0.07;0.15;64.34
+2024-04-29 09:30:39;llama-2-7b-32k-instruct.Q8_0.gguf;parquet;1;100;0.09;0.23;899.47
+2024-04-29 09:46:22;llama-2-7b-32k-instruct.Q8_0.gguf;parquet;1;100;0.04;0.2;80.70
+2024-04-29 10:41:00;Phi-3-mini-4k-instruct-fp16.gguf;parquet;1;100;0.15;0.15;25.35

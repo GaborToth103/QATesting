@@ -1,6 +1,7 @@
 import logging
 import os
 import pandas as pd
+import datetime
 
 class MyLogger(logging.getLoggerClass()):
     def __init__(self, name: str = "Evaluator Logger", level: int | str = 0, location = "docs/") -> None:
@@ -33,7 +34,7 @@ class MyLogger(logging.getLoggerClass()):
                     pass
             else:
                 row = pd.DataFrame(None, columns=["Date", "Model name", "Data name", "Seed count", 
-                                                    "Table count", "Minimum precision", "Maximum precision", 
+                                                    "Table count", "Minimum accuracy", "Maximum accuracy", 
                                                     "Duration (seconds)"])
                 row.to_csv(file_path, mode='x', header=True, index=False, sep=";")  # Append row to the CSV file without writing headers
             print(f"File {file_path} created.")
@@ -43,14 +44,23 @@ class MyLogger(logging.getLoggerClass()):
 
     def save_row_to_csv(self, data_to_append: dict, file_name: str = "result.csv"):
         path = self.location + file_name
-
-
-
         row = pd.DataFrame([data_to_append], columns=["Date", "Model name", "Data name", "Seed count", 
-                                            "Table count", "Minimum precision", "Maximum precision", 
+                                            "Table count", "Minimum accuracy", "Maximum accuracy", 
                                             "Duration (seconds)"])
-
         row.to_csv(path, mode='a', header=False, index=False, sep=";")  # Append row to the CSV file without writing headers
+
+    def logging_results(self, model_name: str, data_name: str, seed_count: int, table_count: int, min: float, max: float, duration: float):
+        data_to_append = {
+            "Date": datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            "Model name": model_name,
+            "Data name": data_name,
+            "Seed count": seed_count,
+            "Table count": table_count,
+            "Minimum accuracy": f"{min:.2f}",
+            "Maximum accuracy": f"{max:.2f}",
+            "Duration (seconds)": f"{duration:.2f}"
+        }
+        self.save_row_to_csv(data_to_append)
 
 if __name__ == "__main__":
     log = MyLogger()
@@ -61,8 +71,8 @@ if __name__ == "__main__":
     "Data name": "Example Data",
     "Seed count": 8,
     "Table count": 456,
-    "Minimum precision": 0.95,
-    "Maximum precision": 0.98,
+    "Minimum accuracy": 0.95,
+    "Maximum accuracy": 0.98,
     "Duration (seconds)": 123.45
     }
     log.save_row_to_csv(data_to_append)

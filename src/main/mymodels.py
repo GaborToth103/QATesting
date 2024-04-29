@@ -52,7 +52,7 @@ class ModelLlama(Model):
         return file_path
 
     def generate_text(self, table: pd.DataFrame, question: str) -> str:
-        prompt = f"{table}\n{question}\n The answer in one word: "
+        prompt = f"{table}\n{question}\n Write the correct table data cell above: "
         output = self.model(
             prompt,
             max_tokens=4096,
