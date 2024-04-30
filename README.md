@@ -13,5 +13,4 @@ nvidia-smi
 ```
 
 # TODO
-- prompt
 - log

@@ -2,9 +2,55 @@ import urllib.request
 from llama_cpp import Llama
 import os
 import pandas as pd
+from enum import Enum, auto
 
-prompt_en = "Write the correct table data cell above: "
-prompt_hu = "Válaszolj az alábbi kérdésre a lenti táblázat alapján: "
+def read_questions(path = 'data/questions_hu.txt') -> list[str]:
+    with open(path, "r") as my_file: 
+        data = my_file.read() 
+        data_into_list = data.split("\n") 
+    return data_into_list 
+
+questions: list[str] = read_questions()
+
+class Prompt(Enum):
+    MICROSOFT = 0
+    LLAMA2HUN = 1
+    LLAMA2 = 2
+    LLAMA3 = 3
+
+def construct_prompt(index_question: int, question: str, table: pd.DataFrame = pd.DataFrame(), language_en: bool = True, prompt_type: Prompt | None = None) -> str:
+    """Constructing a prompt for different LLM model types.
+
+    Args:
+        index_question (int): The question index for translating purposes.
+        question (str): The question to ask (same as User Prompt) to tell the model what information to say.
+        table (pd.DataFrame, optional): A table (dataframe) for User Prompt as information to help the model. Defaults to pd.DataFrame().
+        language_en (bool, optional): Whether the prompt should be english. Otherwise its hungarian. Defaults to True.
+        prompt_type (Prompt | None, optional): The type of prompt as Prompt Enum type, since different model use different type of prompting. Defaults to None.
+
+    Returns:
+        str: the prompt in a string format that can be used directly for generation.
+    """
+    
+    # This can be prompt engineered further since this is entirely made up.
+    if language_en:
+        instruction = "You are a Question answering bot that processes table provided. Based on the table, answer the questions briefly!"
+    else:
+        instruction = "Válaszolj az alábbi kérdésre a lenti táblázat alapján! Tömören válaszolj. A válasz csak egy cella tartalma legyen. Ne írj magyarázatot!"        
+        question = questions[index_question]
+
+    # This should not be modified, as it matches the training data.
+    match prompt_type:
+        case Prompt.MICROSOFT:
+            return f"<|system|>\n{instruction}<|end|>\n<|user|>\n{table}\n\n{question}<end>\n<|assistant|>\n"
+        case Prompt.LLAMA3:
+            return f"<|im_start|>system\n{instruction}<|im_end|>\n<|im_start|>user\n{table}\n\n{question}<|im_end|>\n<|im_start|>assistant\n"
+        case Prompt.LLAMA2:
+            return f"[INST] <<SYS>>\n{instruction}\n<</SYS>>\n{table}\n\n{question}[/INST]"
+        case Prompt.LLAMA2HUN:
+            return f"<|system|>\n{instruction}</s><|end|>\n<|user|>\n{table}\n\n{question}</s><end>\n<|assistant|>\n"
+        case _: 
+            return f"{instruction}\n\n{table}\n\n{question}\n\nThe answer: "
 
 class Tranlator:
     def __init__(self) -> None:
@@ -34,9 +80,9 @@ class Model:
 
 class ModelLlama(Model):
     def __init__(self,
-                 url: str = "https://huggingface.co/QuantFactory/Meta-Llama-3-8B-Instruct-GGUF/resolve/main/Meta-Llama-3-8B-Instruct.Q4_K_M.gguf",
+                 url: str,
                  model_folder_path: str = 'models/',
-                 context_length: int = 4096, n_gpu_layers=-1) -> None:
+                 context_length: int = 4096, n_gpu_layers=-1, prompt_format: Prompt = Prompt.LLAMA3, lang_en: bool = True) -> None:
         super().__init__()
         self.name: str = url.split("/")[-1]
         self.model_path: str = self.download_file(url, model_folder_path, self.name)
@@ -46,6 +92,8 @@ class ModelLlama(Model):
             n_gpu_layers=n_gpu_layers,
             n_threads=8,
         )
+        self.prompt_format: Prompt = prompt_format
+        self.lang_en: bool = lang_en
 
     @staticmethod
     def download_file(url: str, folder_path: str, name: str) -> str:
@@ -67,13 +115,12 @@ class ModelLlama(Model):
             print(f"File downloaded successfully to {file_path}")
         return file_path
 
-    def generate_text(self, table: pd.DataFrame, question: str) -> str:
-        prompt = f"{prompt_hu}\n##Kérdés: {question}\n##Táblázat:{table}\nTömören válaszolj. A válasz csak egy cella tartalma legyen. Ne írj magyarázatot.\nA válasz: "
+    def generate_text(self, index, table: pd.DataFrame, question: str) -> str:
         output = self.model(
-            prompt,
+            construct_prompt(index, question, table, self.lang_en, self.prompt_format),
             max_tokens=4096,
             echo=False,
-            stop=["<|", "\n"],
+            stop=["<|", "<</", "[/INST]", "[INST]", "</s>"],
         )
         return output["choices"][0]["text"].strip()
 
@@ -162,18 +209,3 @@ class ModelTranslate(Model):
         question = self.translate_sentence(question, "hu")
         question = self.translate_sentence(question, "en")
         return question
-    
-if __name__ == "__main__":
-    path = 'data/model_list.csv'
-    prompt = f"""<|im_start|>system
-    You are an assistant that briefly answers the user's questions.<|im_end|>
-    <|im_start|>user
-    How many planets are there in our Solar System? Write only the correct number!<|im_end|>
-    <|im_start|>assistant
-    """
-    df = pd.read_csv(path, index_col=0)
-    for index, row in df.iterrows():
-        print()
-        model = ModelLlama(url=row['URL'], n_gpu_layers=row['Layer offset count'])
-        answer = model.generate_text(pd.DataFrame(),prompt)
-        print(answer)

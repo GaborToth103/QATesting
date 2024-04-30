@@ -1,8 +1,0 @@
-Date;Model name;Data name;Seed count;Table count;Minimum accuracy;Maximum accuracy;Duration (seconds)
-2024-04-30 13:23:11;Phi-3-mini-4k-instruct-q4.gguf;wikitablequestions:HUN;3;100;0.07;0.14;70.30
-2024-04-30 13:00:11;Phi-3-mini-4k-instruct-fp16.gguf;wikitablequestions:HUN;3;100;0.11;0.13;58.65
-2024-04-30 13:02:33;SambaLingo-Hungarian-Chat-Q8_0.gguf;wikitablequestions:HUN;3;100;0.08;0.10;72.55
-2024-04-30 13:06:29;Meta-Llama-3-8B-Instruct.Q8_0.gguf;wikitablequestions:HUN;3;100;0.08;0.17;165.26
-2024-04-30 13:08:34;openbiollm-llama3-8b.Q8_0.gguf;wikitablequestions:HUN;3;100;0.11;0.13;74.01
-2024-04-30 13:11:21;dolphin-2.9-llama3-8b-q8_0.gguf;wikitablequestions:HUN;3;100;0.10;0.15;114.50
-2024-04-30 13:21:41;llama-2-7b-32k-instruct.Q8_0.gguf;wikitablequestions:HUN;3;100;0.07;0.08;171.16
