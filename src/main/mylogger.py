@@ -35,7 +35,7 @@ class MyLogger(logging.getLoggerClass()):
             else:
                 row = pd.DataFrame(None, columns=["Date", "Model name", "Data name", "Seed count", 
                                                     "Table count", "Minimum accuracy", "Maximum accuracy", 
-                                                    "Duration (seconds)"])
+                                                    "Duration (seconds)", "Data language"])
                 row.to_csv(file_path, mode='x', header=True, index=False, sep=";")  # Append row to the CSV file without writing headers
             print(f"File {file_path} created.")
         except Exception as e:
@@ -46,10 +46,15 @@ class MyLogger(logging.getLoggerClass()):
         path = self.location + file_name
         row = pd.DataFrame([data_to_append], columns=["Date", "Model name", "Data name", "Seed count", 
                                             "Table count", "Minimum accuracy", "Maximum accuracy", 
-                                            "Duration (seconds)"])
+                                            "Duration (seconds)", "Data language"])
         row.to_csv(path, mode='a', header=False, index=False, sep=";")  # Append row to the CSV file without writing headers
 
-    def logging_results(self, model_name: str, data_name: str, seed_count: int, table_count: int, min: float, max: float, duration: float):
+    def logging_results(self, model_name: str, data_name: str, seed_count: int, table_count: int, min: float, max: float, duration: float, lang_en: bool):
+        if lang_en:
+            language: str = "English"
+        else:
+            language: str = "Hungarian"
+
         data_to_append = {
             "Date": datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             "Model name": model_name,
@@ -58,7 +63,8 @@ class MyLogger(logging.getLoggerClass()):
             "Table count": table_count,
             "Minimum accuracy": f"{min:.2f}",
             "Maximum accuracy": f"{max:.2f}",
-            "Duration (seconds)": f"{duration:.2f}"
+            "Duration (seconds)": f"{duration:.2f}",
+            "Language": language,
         }
         self.save_row_to_csv(data_to_append)
 
@@ -73,6 +79,7 @@ if __name__ == "__main__":
     "Table count": 456,
     "Minimum accuracy": 0.95,
     "Maximum accuracy": 0.98,
-    "Duration (seconds)": 123.45
+    "Duration (seconds)": 123.45,
+    "Data language": "Hungarian"
     }
     log.save_row_to_csv(data_to_append)

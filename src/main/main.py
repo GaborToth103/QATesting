@@ -59,7 +59,8 @@ class Evaluate:
                     model_answer: str = self.model.generate_text(index, table, question)
                     evaluated_count += 1
                     success: bool = self.scoring(truth, model_answer)
-                    self.log.info(f'{evaluated_count}/{limit}\t{success}\t{question}\t{truth}\t{model_answer}')
+                    model_answer_format = model_answer.replace("\n", " ")
+                    self.log.info(f'{evaluated_count}/{limit}\t{success}\t{question}\t{truth}\t{model_answer_format}')
                     if limit and evaluated_count >= limit:
                         break
                 except Exception as e:
@@ -80,7 +81,7 @@ class Evaluate:
             self.model = None
             self.model = mymodels.ModelLlama(url=model_row['URL'], n_gpu_layers=int(model_row['Layer offset count']), prompt_format=mymodels.Prompt(model_row['Prompt format']), lang_en=lang_en)
             evaluation_result, elapsed_time = self.evaluate(model_row, seed_count, limit)
-            self.log.logging_results(str(self.model), "wikitablequestions:HUN", seed_count, evaluation_result['evaluated_count'], evaluation_result['min_accuracy'], evaluation_result['max_accuracy'], elapsed_time)
+            self.log.logging_results(str(self.model), "wikitablequestions:test", seed_count, evaluation_result['evaluated_count'], evaluation_result['min_accuracy'], evaluation_result['max_accuracy'], elapsed_time, lang_en)
 
 if __name__ == "__main__":
     Evaluate(model_list_path='data/model_list.csv').iterate(seed_count=3, lang_en=True, limit=100)

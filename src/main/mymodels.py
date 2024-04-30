@@ -34,7 +34,7 @@ def construct_prompt(index_question: int, question: str, table: pd.DataFrame = p
     
     # This can be prompt engineered further since this is entirely made up.
     if language_en:
-        instruction = "You are a Question answering bot that processes table provided. Based on the table, answer the questions briefly!"
+        instruction = "You are a Question answering bot that processes table provided. Based on the table, you answer the questions in a single sentence without explanation."
     else:
         instruction = "Válaszolj az alábbi kérdésre a lenti táblázat alapján! Tömören válaszolj. A válasz csak egy cella tartalma legyen. Ne írj magyarázatot!"        
         question = questions[index_question]
@@ -120,7 +120,7 @@ class ModelLlama(Model):
             construct_prompt(index, question, table, self.lang_en, self.prompt_format),
             max_tokens=4096,
             echo=False,
-            stop=["<|", "<</", "[/INST]", "[INST]", "</s>"],
+            stop=["<|", "<</", "[/INST]", "[INST]", "</s>", "\n"],
         )
         return output["choices"][0]["text"].strip()
 
