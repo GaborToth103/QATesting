@@ -11,3 +11,7 @@ To check GPU state:
 ```
 nvidia-smi
 ```
+
+# TODO
+- prompt
+- log

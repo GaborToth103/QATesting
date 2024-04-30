@@ -1,14 +1,20 @@
 from load_database import MyDatabase
 from mylogger import MyLogger
 import mymodels as mymodels
-import sys
 import pandas as pd
 import decorators
 import re
-import datetime
+
+def read_questions(path = 'data/questions_hu.txt') -> list[str]:
+    with open(path, "r") as my_file: 
+        data = my_file.read() 
+        data_into_list = data.split("\n") 
+    return data_into_list 
+
+
 
 class Evaluate:
-    def __init__(self, model_list_path: str, limit: int | None = None) -> None:
+    def __init__(self, model_list_path: str, limit: int | None = None, hu: bool = False) -> None:
         """Evaluation function to get all models from a CSV to get questioned. The results will be logged to the target CSV.
 
         Args:
@@ -20,6 +26,8 @@ class Evaluate:
         self.mydatabase: MyDatabase = MyDatabase()
         self.model_rows: pd.DataFrame = pd.read_csv(model_list_path, index_col=0)
         self.model: mymodels.Model = mymodels.Model()
+        self.questions: list[str] = read_questions()
+        self.hu: bool = hu
 
     def scoring(self, truth: str, model_answer: str):
         """ Scoring function to tell how the model performed on this task. Sets the model's score.
@@ -38,9 +46,8 @@ class Evaluate:
         model_answer: str = str(model_answer.lower().strip())
         # database.check_sql_answer(model_answer, truth): # FIXME database is failing for some reason 
         if model_answer: # TODO good scoring function
-            if clean_string(model_answer) in clean_string(truth):
+            if clean_string(model_answer) in clean_string(truth) or clean_string(truth) in clean_string(model_answer):
                 self.model.score[0] += 1
-            if clean_string(truth) in clean_string(model_answer):
                 self.model.score[1] += 1
         self.log.debug(f'Llama score updated: {self.model.score}')
         
@@ -55,6 +62,8 @@ class Evaluate:
                 self.log.debug(f'Current question: {index} of {len(self.mydatabase.rows)} (limit {self.limit})')
                 try:
                     table, question, truth = self.mydatabase.get_stuff(row)
+                    if self.hu:
+                        question = self.questions[index] # FIXME ez a magyar fordítás
                 except Exception as e:
                     self.log.error(e)
                     continue
@@ -81,9 +90,10 @@ class Evaluate:
 
     def iterate(self, seed_count: int = 1):
         for index, model_row in self.model_rows.iterrows():
+            self.model = None
             self.model = mymodels.ModelLlama(url=model_row['URL'], n_gpu_layers=int(model_row['Layer offset count']))
             evaluation_result, elapsed_time = self.evaluate(model_row, seed_count=seed_count)
-            self.log.logging_results(str(self.model), "parquet", seed_count, evaluation_result['evaluated_count'], evaluation_result['min_accuracy'], evaluation_result['max_accuracy'], elapsed_time)
+            self.log.logging_results(str(self.model), "wikitablequestions:HUN", seed_count, evaluation_result['evaluated_count'], evaluation_result['min_accuracy'], evaluation_result['max_accuracy'], elapsed_time)
 
 if __name__ == "__main__":
-    Evaluate(model_list_path='data/model_list.csv', limit=10).iterate(seed_count=3)
+    Evaluate(model_list_path='data/model_list.csv', limit=100, hu=True).iterate(seed_count=3)

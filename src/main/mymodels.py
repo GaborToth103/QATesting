@@ -3,6 +3,22 @@ from llama_cpp import Llama
 import os
 import pandas as pd
 
+prompt_en = "Write the correct table data cell above: "
+prompt_hu = "Válaszolj az alábbi kérdésre a lenti táblázat alapján: "
+
+class Tranlator:
+    def __init__(self) -> None:
+        from transformers import pipeline
+        import torch
+        self.pipe_en_hu = pipeline("translation", model="Helsinki-NLP/opus-mt-tc-big-en-hu")
+        self.pipe_hu_en = pipeline("translation", model="Helsinki-NLP/opus-mt-tc-big-hu-en")
+
+    def translate_sentence(self, sentence: str, from_en: bool = True):
+        if from_en:
+            return self.pipe_en_hu(sentence)[0]['translation_text']
+        return self.pipe_hu_en(sentence)[0]['translation_text']
+
+
 class Model:
     def __init__(self, url: str = "None/None") -> None:
         self.score = [0, 0]
@@ -52,7 +68,7 @@ class ModelLlama(Model):
         return file_path
 
     def generate_text(self, table: pd.DataFrame, question: str) -> str:
-        prompt = f"{table}\n{question}\n Write the correct table data cell above: "
+        prompt = f"{prompt_hu}\n##Kérdés: {question}\n##Táblázat:{table}\nTömören válaszolj. A válasz csak egy cella tartalma legyen. Ne írj magyarázatot.\nA válasz: "
         output = self.model(
             prompt,
             max_tokens=4096,
