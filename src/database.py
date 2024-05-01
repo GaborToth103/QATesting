@@ -1,17 +1,14 @@
 import pandas as pd
-import json
-import numpy as np
 import sqlite3
 import os
 
-class MyDatabase:
-    def __init__(self, path: str = 'data/database.db', parquet_path: str = 'data/0000.parquet') -> None:
-        self.path = path
+class Database:
+    def __init__(self, path: str = 'data/database.db', parquet_path: str = 'data/wikitablequestions:test.parquet') -> None:
+        self.name = parquet_path.split("/")[-1]
         df = pd.read_parquet(parquet_path)
         rows = []
         for index, row in df.iterrows():
             rows.append(row)
-        print("table extracted, extracted row count: ", len(rows))
         self.rows: list[pd.Series] = rows
 
     def get_stuff(self, row: pd.Series):
@@ -49,7 +46,7 @@ class MyDatabase:
 
 
 if __name__ == "__main__":
-    mydatabase = MyDatabase()
+    mydatabase = Database()
     for index, row in enumerate(mydatabase.rows):
-        table, b, c =mydatabase.get_stuff(row)
+        table, b, c = mydatabase.get_stuff(row)
         mydatabase.fill_database(table)
