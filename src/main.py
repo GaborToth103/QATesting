@@ -17,7 +17,7 @@ class Controller:
         results: list[float] = list()
         for seed_index in range(seed_count):
             score = 0
-            for data_index, data_entry in enumerate(tqdm(self.database.rows[:question_to_ask - 1], unit="questions", desc=f"{model.name} {seed_index}")):
+            for data_index, data_entry in enumerate(tqdm(self.database.rows[:question_to_ask], unit="questions", desc=f"{model.name} {seed_index}")):
                 table, question, truth = self.database.get_stuff(data_entry)
                 answer = model.generate_text(data_index, table, question)
                 success = self.scoring(truth, answer)
@@ -61,11 +61,17 @@ class Controller:
         return False
 
 if __name__ == "__main__":
-    Controller(
+    controller = Controller(
         model_list_path='data/model_list.csv',
         data_path='data/wikitablequestions:test.parquet',
-    ).loop(
-        seed_count=20,
-        question_limit=200,
+    )
+    controller.loop(
+        seed_count=10,
+        question_limit=1000,
         language_en=True,
+    )
+    controller.loop(
+        seed_count=10,
+        question_limit=1000,
+        language_en=False,
     )

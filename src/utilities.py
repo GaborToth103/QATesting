@@ -2,6 +2,7 @@ import os
 import sys
 from enum import Enum
 import time
+import subprocess
 
 class Suppressor(object):
     def __enter__(self):
@@ -95,5 +96,15 @@ def measure_time(func):
         elapsed_time = end_time - start_time
         return result, elapsed_time
     return wrapper
+
+def get_memory_usage() -> int:
+    result = subprocess.check_output(['nvidia-smi', '--query-compute-apps=pid,used_memory', '--format=csv,noheader'])
+    process_memory = [line.strip().split(',') for line in result.decode('utf-8').strip().split('\n')]
+    my_pid = os.getpid()
+    for pid, memory in process_memory:
+        return int(memory.split()[0])
+        if pid == my_pid:
+            pass
+    return 0
 
 translated_questions: list[str] = read_questions()
