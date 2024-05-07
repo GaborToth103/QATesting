@@ -44,6 +44,9 @@ class Database:
         connection.close()
         return result.fetchone() == true_answer
 
+    def create_csv_data_table(self):
+        # TODO creating data
+        pass
 
 if __name__ == "__main__":
     mydatabase = Database()

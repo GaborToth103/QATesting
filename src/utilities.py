@@ -3,6 +3,7 @@ import sys
 from enum import Enum
 import time
 import subprocess
+import re
 
 class Suppressor(object):
     def __enter__(self):
@@ -81,7 +82,7 @@ def construct_prompt(index_question: int, question: str, table, language_en: boo
         case _: 
             return f"{instruction}\n\n{table}\n\n{question}\n\n{initiator}"
 
-def read_questions(path = 'data/questions_hu.txt') -> list[str]:
+def read_data(path = 'data/questions_hu.txt') -> list[str]:
     with open(path, "r") as my_file: 
         data = my_file.read() 
         data_into_list = data.split("\n") 
@@ -107,4 +108,30 @@ def get_memory_usage() -> int:
             pass
     return 0
 
-translated_questions: list[str] = read_questions()
+def clean_string(input_string: str) -> list[str]:
+    cleaned_list: list[str] = list()
+    if input_string:
+        cleaned_string = re.sub(r"[^\w\s]", "", input_string)
+        cleaned_string = cleaned_string.lower()
+        cleaned_list = cleaned_string.split()
+    return cleaned_list
+
+def scoring(truth: str, model_answer: str) -> bool:
+    """Scoring function to tell how the model performed on this task. The function cleans the strings and tokenizes them. If any of the truth's token is in the model_answer's token then we accept the answer.
+
+    Args:
+        truth (str): The true answer from the dataset accepted as truth to compare model answer with.
+        model_answer (str): The model answer that needs to be analyzed.
+
+    Returns:
+        bool: the result whether the model_answer is accepted based on the truth.
+    """        
+    if model_answer:
+        for truth_chunk in clean_string(truth):
+            if truth_chunk in clean_string(model_answer):
+                return True
+    return False
+
+
+translated_questions: list[str] = read_data()
+translated_answers: list[str] = read_data("data/answers_hu.txt")

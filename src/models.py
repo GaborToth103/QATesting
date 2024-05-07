@@ -119,6 +119,7 @@ class ModelTranslate(Model):
         self.model = AutoModelForSeq2SeqLM.from_pretrained(url)
         self.questions: list[str] = []
         self.database: Database = Database()
+        self.answers: list[str] = []
 
     def translate_questions(self):
         for row in tqdm(self.database.rows):
@@ -128,8 +129,17 @@ class ModelTranslate(Model):
             except Exception as e:
                 print(e)
                 continue
-        self.write_questions(self.questions)
+        self.write_list_to_file(self.questions)
 
+    def translate_answers(self):
+        for row in tqdm(self.database.rows):
+            try:
+                table, question, truth = self.database.get_stuff(row)
+                self.answers.append(self.translate(truth))
+            except Exception as e:
+                print(e)
+                continue
+        self.write_list_to_file(self.answers, path='data/answers_hu.txt')
     
     def translate(self, sample_text):
         batch = self.tokenizer([sample_text], return_tensors="pt")
@@ -138,9 +148,9 @@ class ModelTranslate(Model):
         return result
 
     @staticmethod
-    def write_questions(questions: list, path = 'data/questions_hu.txt'):
+    def write_list_to_file(list_of_sentences: list, path = 'data/questions_hu.txt'):
         with open(path, 'w') as outfile:
-            outfile.write('\n'.join(str(i) for i in questions))
+            outfile.write('\n'.join(str(i) for i in list_of_sentences))
     
     @staticmethod
     def read_questions(path = 'data/questions_hu.txt') -> list[str]:
@@ -148,3 +158,6 @@ class ModelTranslate(Model):
             data = my_file.read() 
             data_into_list = data.split("\n") 
         return data_into_list 
+
+if __name__ == "__main__":
+    ModelTranslate().translate_answers()

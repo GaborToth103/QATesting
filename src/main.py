@@ -4,7 +4,7 @@ from database import Database
 from models import ModelLlama, Prompt
 from tqdm import tqdm
 from mylogger import MyLogger
-from utilities import measure_time
+from utilities import *
 
 class Controller:
     def __init__(self, model_list_path: str, data_path: str) -> None:
@@ -20,7 +20,8 @@ class Controller:
             for data_index, data_entry in enumerate(tqdm(self.database.rows[:question_to_ask], unit="questions", desc=f"{model.name} {seed_index}")):
                 table, question, truth = self.database.get_stuff(data_entry)
                 answer = model.generate_text(data_index, table, question)
-                success = self.scoring(truth, answer)
+                truth  += " " + translated_answers[data_index] # FIXME hungarian translate
+                success = scoring(truth, answer)
                 if success: score += 1
                 self.logger.debug(f"{success}\t{question}\t{truth}\t{answer}")
             results.append(score/question_to_ask)
@@ -37,41 +38,13 @@ class Controller:
             except Exception as e:
                 self.logger.error(e)
 
-    @staticmethod
-    def scoring(truth: str, model_answer: str) -> bool:
-        """Scoring function to tell how the model performed on this task. The function cleans the strings and tokenizes them. If any of the truth's token is in the model_answer's token then we accept the answer.
-
-        Args:
-            truth (str): The true answer from the dataset accepted as truth to compare model answer with.
-            model_answer (str): The model answer that needs to be analyzed.
-
-        Returns:
-            bool: the result whether the model_answer is accepted based on the truth.
-        """        
-        def clean_string(input_string: str) -> list[str]:
-            cleaned_string = re.sub(r"[^\w\s]", "", input_string)
-            cleaned_string = cleaned_string.lower()
-            cleaned_list = cleaned_string.split()
-            return cleaned_list
-        
-        if model_answer: #
-            for truth_chunk in clean_string(truth):
-                if truth_chunk in clean_string(model_answer):
-                    return True
-        return False
-
 if __name__ == "__main__":
     controller = Controller(
         model_list_path='data/model_list.csv',
         data_path='data/wikitablequestions:test.parquet',
     )
     controller.loop(
-        seed_count=10,
-        question_limit=1000,
-        language_en=True,
-    )
-    controller.loop(
-        seed_count=10,
+        seed_count=1,
         question_limit=1000,
         language_en=False,
     )
