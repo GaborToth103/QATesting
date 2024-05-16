@@ -32,7 +32,7 @@ class ModelLlama(Model):
         with Suppressor():
             self.model: Llama = Llama(
                 model_path=self.model_path,
-                n_ctx=context_length,
+                n_ctx=0,
                 n_gpu_layers=n_gpu_layers,
                 n_threads=8,
             )
@@ -63,7 +63,7 @@ class ModelLlama(Model):
         with Suppressor():
             output = self.model(
                 construct_prompt(index, question, table, self.lang_en, self.prompt_format),
-                max_tokens=4096,
+                max_tokens=None,
                 echo=False,
                 stop=["<|", "<</", "[/INST]", "[INST]", "</s>", "\n", ". "],
             )
@@ -124,7 +124,7 @@ class ModelTranslate(Model):
     def translate_questions(self):
         for row in tqdm(self.database.rows):
             try:
-                table, question, truth = self.database.get_stuff(row)
+                table, question, truth = self.database.extract_parquet(row)
                 self.questions.append(self.translate(question))
             except Exception as e:
                 print(e)
@@ -134,7 +134,7 @@ class ModelTranslate(Model):
     def translate_answers(self):
         for row in tqdm(self.database.rows):
             try:
-                table, question, truth = self.database.get_stuff(row)
+                table, question, truth = self.database.extract_parquet(row)
                 self.answers.append(self.translate(truth))
             except Exception as e:
                 print(e)

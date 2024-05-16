@@ -8,14 +8,24 @@ class Database:
         df = pd.read_parquet(parquet_path)
         rows = []
         for index, row in df.iterrows():
-            rows.append(row)
+            duplicate = len(df.columns) != len(df.columns.str.replace('.1$', '').drop_duplicates())
+            if not duplicate:
+                rows.append(row)
         self.rows: list[pd.Series] = rows
+        self.path = path
 
-    def get_stuff(self, row: pd.Series):
-        # returns table, question and answers
+    def extract_parquet(self, row: pd.Series) -> tuple[pd.DataFrame, str, str]:
+        """Extract Parquet Data
+
+        Args:
+            row (pd.Series): For a row of the parquet data extract the table, the question and the answer. 
+
+        Returns:
+            tuple[pd.DataFrame, str, str]: Returns the Table, Question, Answer data respectively.
+        """
         row_list = row['table']['rows'].tolist()
-        table = pd.DataFrame(row_list, columns=row['table']['header'])
-        return table, row['question'], row['answers'][0]
+        table = pd.DataFrame(row_list, columns=row['table']['header'])        
+        return table, row['question'], " ".join(row['answers']) 
 
     def fill_database(self, table: pd.DataFrame) -> str | None:
         # makes an SQL table based on the pandas table
@@ -44,12 +54,16 @@ class Database:
         connection.close()
         return result.fetchone() == true_answer
 
-    def create_csv_data_table(self):
-        # TODO creating data
-        pass
+    def parquet_table_to_csv(self):
+        for row in self.rows:
+            table, b, c = self.extract_parquet(row)
+            try:
+                self.fill_database(table)
+            except Exception as e:
+                table.to_csv('data/table.csv')
+                print(e)
+                print(table["Terminals"])
+                exit()
 
-if __name__ == "__main__":
-    mydatabase = Database()
-    for index, row in enumerate(mydatabase.rows):
-        table, b, c = mydatabase.get_stuff(row)
-        mydatabase.fill_database(table)
+if __name__ == "__main__":    
+    Database().parquet_table_to_csv()

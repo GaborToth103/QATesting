@@ -18,8 +18,8 @@ class Controller:
         for seed_index in range(seed_count):
             score = 0
             for data_index, data_entry in enumerate(tqdm(self.database.rows[:question_to_ask], unit="questions", desc=f"{model.name} {seed_index}")):
-                table, question, truth = self.database.get_stuff(data_entry)
-                answer = model.generate_text(data_index, table, question)
+                table, question, truth = self.database.extract_parquet(data_entry)
+                answer = model.generate_text(data_index, table.to_csv(index=False), question)
                 truth  += " " + translated_answers[data_index] # FIXME hungarian translate
                 success = scoring(truth, answer)
                 if success: score += 1
@@ -44,7 +44,7 @@ if __name__ == "__main__":
         data_path='data/wikitablequestions:test.parquet',
     )
     controller.loop(
-        seed_count=1,
+        seed_count=10,
         question_limit=1000,
-        language_en=False,
+        language_en=True,
     )
