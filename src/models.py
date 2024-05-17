@@ -32,9 +32,8 @@ class ModelLlama(Model):
         with Suppressor():
             self.model: Llama = Llama(
                 model_path=self.model_path,
-                n_ctx=0,
-                n_gpu_layers=n_gpu_layers,
-                n_threads=8,
+                n_ctx=9000,
+                n_gpu_layers=-1,
             )
         self.prompt_format: Prompt = prompt_format
         self.lang_en: bool = lang_en
