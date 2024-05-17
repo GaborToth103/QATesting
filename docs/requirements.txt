@@ -4,6 +4,7 @@ pandas
 matplotlib
 tqdm
 transformers
+pytest
 
 # Parquet
 pyarrow
