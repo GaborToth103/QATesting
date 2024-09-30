@@ -7,7 +7,7 @@ from utilities import *
 
 class Controller:
     def __init__(self, model_list_path: str, data_path: str) -> None:
-        self.database: Database = Database(parquet_path=data_path)
+        self.database: Database = Database(data_path=data_path)
         self.model_details: pd.DataFrame = pd.read_csv(model_list_path, index_col=False)
         self.logger: MyLogger = MyLogger()
 
@@ -46,5 +46,5 @@ if __name__ == "__main__":
     controller.loop(
         seed_count=1,
         question_limit=100,
-        language_en=False,
+        language_en=True,
     )

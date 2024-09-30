@@ -14,8 +14,8 @@ fastparquet
 sentencepiece
 sacremoses
 
-# Torch
---extra-index-url https://download.pytorch.org/whl/cu113
-torch==1.12.0+cu113
-torchvision==0.13.0+cu113
-torchaudio==0.12.0 
+# Torch, make sure to replace cpu if want to use gpu
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch
+torchvision
+torchaudio

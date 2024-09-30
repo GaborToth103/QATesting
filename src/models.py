@@ -159,4 +159,7 @@ class ModelTranslate(Model):
         return data_into_list 
 
 if __name__ == "__main__":
-    ModelTranslate().translate_answers()
+    # ModelTranslate().translate_answers()
+    mymodel = ModelLlama(url="https://huggingface.co/lmstudio-community/Llama-3.2-1B-Instruct-GGUF/resolve/main/Llama-3.2-1B-Instruct-Q3_K_L.gguf")
+    generated_text = mymodel.generate_text(0, None, "What is the meaning of life?")
+    print(generated_text)
