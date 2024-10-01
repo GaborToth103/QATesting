@@ -96,12 +96,12 @@ class Database:
                 print(table["Terminals"])
                 exit()
 
-    def get_question_with_table(self, id: str) -> tuple[pd.DataFrame, str, str]:
-        # TODO from the id, get the table, the question and the answer as return values 
+    def get_question_with_table(self, id: str) -> tuple[pd.DataFrame, str, list[str]]:
+        """from the id, get the table, the question and the answer as return values""" 
         connection = sqlite3.connect(self.path)
         try:
             cursor = connection.cursor()
-            query = f"SELECT utterance, context, targetValue FROM qa_table where id = '{id}'"
+            query = f"SELECT utterance, context, targetValue FROM qa_table where id = 'nt-{id}'"
             cursor.execute(query)
             question, data_path, answers = cursor.fetchone()
             cursor = connection.cursor()
@@ -115,10 +115,25 @@ class Database:
         finally:
             connection.close()
         return df, question, answers.split(',')
+    
+    def get_database_info(self, ) -> int:
+        """returns the question count from the database"""
+        connection = sqlite3.connect(self.path)
+        data: int = 0
+        try:
+            cursor = connection.cursor()
+            query = f"SELECT COUNT(*) FROM qa_table"
+            cursor.execute(query)
+            data = int(cursor.fetchone()[0])
+        except Exception as e:
+            print(e)
+        finally:
+            connection.close()
+        return data
 
 
 if __name__ == "__main__":
     mydatabase = Database()
     # mydatabase.wtq_collector('/home/gabortoth/Dokumentumok/Data/WikiTableQuestions') # this is to upload data
-    data_table, question, answers = mydatabase.get_question_with_table(f"nt-{1}") # this is to get a specific data
+    data_table, question, answers = mydatabase.get_question_with_table(0) # this is to get a specific data
     print(f"{data_table}\n\n{question}\n{answers}")

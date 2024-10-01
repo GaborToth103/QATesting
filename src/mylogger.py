@@ -37,7 +37,7 @@ class MyLogger(logging.getLoggerClass()):
                         pass
                 else:
                     row = pd.DataFrame(None, columns=["Date", "Model name", "Data name", "Table count", "Accuracies", 
-                                                        "Duration (seconds)", "Data language"])
+                                                        "Iteration speed", "Data language"])
                     row.to_csv(file_path, mode='x', header=True, index=False, sep=";")  # Append row to the CSV file without writing headers
                 print(f"File {file_path} created.")
             except Exception as e:
@@ -58,3 +58,10 @@ class MyLogger(logging.getLoggerClass()):
         row = pd.DataFrame([data_to_append], columns=["Date", "Dataset name", "Dataset size", "Dataset language", "Model name", "Iteration speed", "Score"])
         row.to_csv(self.result_path, mode='a', header=False, index=False, sep=";")  # Append row to the CSV file without writing headers
         self.info(data_to_append)
+
+    def make_report(self):
+        """TODO make a html report from the available .csv file with plot"""
+        raise NotImplementedError
+
+if __name__ == "__main__":
+    MyLogger().make_report()

@@ -58,13 +58,14 @@ class ModelLlama(Model):
             print(f"File downloaded successfully to {file_path}")
         return file_path
 
-    def generate_text(self, index, table: pd.DataFrame, question: str) -> str:
+    def generate_text(self, index: int, table: str, question: str) -> str:
+        """Generating text based on the index, the table in str format and the question"""
         with Suppressor():
             output = self.model(
                 construct_prompt(index, question, table, self.lang_en, self.prompt_format),
                 max_tokens=None,
                 echo=False,
-                stop=["<|", "<</", "[/INST]", "[INST]", "</s>", "\n", ". "],
+                stop=["<|", "<</", "[/INST]", "[INST]", "</s>", "\n", ". ", "</"],
             )
         return output["choices"][0]["text"].strip()
 

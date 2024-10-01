@@ -46,13 +46,13 @@ class Prompt(Enum):
     LLAMA2 = 2
     LLAMA3 = 3
 
-def construct_prompt(index_question: int, question: str, table, language_en: bool = True, prompt_type: Prompt | None = None) -> str:
+def construct_prompt(index_question: int, question: str, table: str, language_en: bool = True, prompt_type: Prompt | None = None) -> str:
     """Constructing a prompt for different LLM model types.
 
     Args:
         index_question (int): The question index for translating purposes.
         question (str): The question to ask (same as User Prompt) to tell the model what information to say.
-        table: A table for User Prompt as information to help the model.
+        table (str): A table for User Prompt as information to help the model in str format.
         language_en (bool, optional): Whether the prompt should be english. Otherwise its hungarian. Defaults to True.
         prompt_type (Prompt | None, optional): The type of prompt as Prompt Enum type, since different model use different type of prompting. Defaults to None.
 
@@ -62,8 +62,8 @@ def construct_prompt(index_question: int, question: str, table, language_en: boo
     
     # This can be prompt engineered further since these prompts are entirely made up.
     if language_en:
-        instruction = "You are a Question answering bot that processes table provided. Based on the table, you answer the questions in a single sentence without explanation."
-        initiator = "The short answer is "
+        instruction = "You are a Question answering bot that processes table provided. Based on the table, you answer the questions without explanation. If there are multiple answers, separate them with commas."
+        initiator = "The answer is: "
     else:
         question = translated_questions[index_question]
         instruction = "Válaszolj az alábbi kérdésre a lenti táblázat alapján! Tömören válaszolj. A válasz csak egy cella tartalma legyen. Ne írj magyarázatot!"        
@@ -116,21 +116,28 @@ def clean_string(input_string: str) -> list[str]:
         cleaned_list = cleaned_string.split()
     return cleaned_list
 
-def scoring(truth: str, model_answer: str) -> bool:
+def scoring(truth: list[str], model_answer: list[str]) -> float:
     """Scoring function to tell how the model performed on this task. The function cleans the strings and tokenizes them. If any of the truth's token is in the model_answer's token then we accept the answer.
 
     Args:
-        truth (str): The true answer from the dataset accepted as truth to compare model answer with.
-        model_answer (str): The model answer that needs to be analyzed.
+        truth (list[str]): The true answer from the dataset accepted as truth to compare model answer with.
+        model_answer (list[str]): The model answer that needs to be analyzed.
 
     Returns:
         bool: the result whether the model_answer is accepted based on the truth.
-    """        
-    if model_answer:
-        for truth_chunk in clean_string(truth):
-            if truth_chunk in clean_string(model_answer):
-                return True
-    return False
+    """
+    result: int = 0.0
+    cleaned_truth = []
+    for truth_chunk in truth:
+        cleaned_truth.append(clean_string(truth_chunk))
+    cleaned_answer = []
+    for answer_chunk in model_answer:
+        cleaned_answer.append(clean_string(answer_chunk))
+    
+    for answer in cleaned_answer:
+        if answer in cleaned_truth:
+            result += 1
+    return float(result)/float(len(truth))
 
 
 translated_questions: list[str] = read_data()
