@@ -45,6 +45,57 @@ class Prompt(Enum):
     LLAMA2HUN = 1
     LLAMA2 = 2
     LLAMA3 = 3
+    
+def construct_answer(table: str, prompt_type: Prompt | None = None) -> str:
+    """Construct prompt for question generation answer part.
+
+    Args:
+        table (str): table for User Prompt as information to help the model in str format.
+        prompt_type (Prompt | None, optional): The type of prompt as Prompt Enum type, since different model use different type of prompting. Defaults to None.
+    Returns:
+        str: the picked answer (which is a cell) in a string format that can be used directly for generation.
+    """
+    instruction = "Select a single relevant value from the table!"
+    initiator = "A single selected value that are separated by commas is: "
+
+    match prompt_type:
+        case Prompt.MICROSOFT:
+            return f"<|system|>\n{instruction}<|end|>\n<|user|>\n{table}<end>\n<|assistant|>\n{initiator}"
+        case Prompt.LLAMA3:
+            return f"<|im_start|>system\n{instruction}<|im_end|>\n<|im_start|>user\n{table}<|im_end|>\n<|im_start|>assistant\n{initiator}"
+        case Prompt.LLAMA2:
+            return f"[INST] <<SYS>>\n{instruction}\n<</SYS>>\n{table}[/INST]\n{initiator}"
+        case Prompt.LLAMA2HUN:
+            return f"<|system|>\n{instruction}</s><|end|>\n<|user|>\n{table}</s><end>\n<|assistant|>\n{initiator}"
+        case _: 
+            return f"{instruction}\n\n{table}\n\n{initiator}"
+    
+def construct_question(table: str, answer: str, prompt_type: Prompt | None = None) -> str:
+    """Construct prompt for question generation question part.
+
+    Args:
+        table (str): table for User Prompt as information to help the model in str format.
+        answer (str): the answer to generate question for.
+        prompt_type (Prompt | None, optional): The type of prompt as Prompt Enum type, since different model use different type of prompting. Defaults to None.
+
+    Returns:
+        str: the question in a string frormat that can be used directly for generation.
+    """
+    instruction = "Generate one relevant question based on the table that aligns with the provided answer."
+    initiator = f"The provided answer is {answer}. The question that makes this answer true is this: "
+    
+    match prompt_type:
+        case Prompt.MICROSOFT:
+            return f"<|system|>\n{instruction}<|end|>\n<|user|>\n{table}<end>\n<|assistant|>\n{initiator}"
+        case Prompt.LLAMA3:
+            return f"<|im_start|>system\n{instruction}<|im_end|>\n<|im_start|>user\n{table}<|im_end|>\n<|im_start|>assistant\n{initiator}"
+        case Prompt.LLAMA2:
+            return f"[INST] <<SYS>>\n{instruction}\n<</SYS>>\n{table}[/INST]\n{initiator}"
+        case Prompt.LLAMA2HUN:
+            return f"<|system|>\n{instruction}</s><|end|>\n<|user|>\n{table}</s><end>\n<|assistant|>\n{initiator}"
+        case _: 
+            return f"{instruction}\n\n{table}\n\n{initiator}"
+
 
 def construct_prompt(index_question: int, question: str, table: str, language_en: bool = True, prompt_type: Prompt | None = None) -> str:
     """Constructing a prompt for different LLM model types.
@@ -139,6 +190,6 @@ def scoring(truth: list[str], model_answer: list[str]) -> float:
             result += 1
     return float(result)/float(len(truth))
 
-
+stopping_tokens = ["<|", "<</", "[/INST]", "[INST]", "</s>", "\n", ". ", "</", "? "]
 translated_questions: list[str] = read_data()
 translated_answers: list[str] = read_data("data/answers_hu.txt")

@@ -13,6 +13,16 @@ class Controller:
 
     @measure_time
     def evaluate_model(self, model: ModelLlama, seed_count: int, question_to_ask: int) -> list[float]:
+        """Evaluate a model for each question.
+
+        Args:
+            model (ModelLlama): the model to evaluate
+            seed_count (int): the number of retry the model is allowed to guess
+            question_to_ask (int): the total questions to ask
+
+        Returns:
+            list[float]: the results as percentage for each seed
+        """
         results: list[float] = list()
         for seed_index in range(seed_count):
             score = 0
@@ -27,7 +37,13 @@ class Controller:
         return results     
 
     def loop(self, seed_count: int = 1, question_limit: int | None = None, language_en: bool = True):
-        """The main loop. Loop through all questions"""
+        """The main loop of the evaluation framework.
+
+        Args:
+            seed_count (int, optional): The amount of retrying with different seeds for each question. Defaults to 1.
+            question_limit (int | None, optional): The maximum number of questions if we want to limit the total amount in the database. Defaults to None.
+            language_en (bool, optional): The language of the dataset and the evaluation. It means the evaluator will ask the question in different english. Defaults to True.
+        """
         question_count_to_ask: int = min(question_limit,self.database.get_database_info()) # get how many total questions to ask
         self.logger.info(f"New loop started with {seed_count} seed count, {question_count_to_ask} total questions and the language is en: {language_en}.")
         for model_detail in self.model_details.iterrows(): # loop through all models to ask questions from all of them

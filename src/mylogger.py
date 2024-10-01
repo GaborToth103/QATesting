@@ -23,7 +23,16 @@ class MyLogger(logging.getLoggerClass()):
         file_handler.setFormatter(formatter)
         self.addHandler(file_handler)
 
-    def create_file_if_not_exists(self, relative_path, log_type: bool = True):
+    def create_file_if_not_exists(self, relative_path: str, log_type: bool = True) -> str:
+        """Create the log file if it's empty or non-existent.
+
+        Args:
+            relative_path (str): The relative path to the log file.
+            log_type (bool, optional): The log type. Defaults to True.
+
+        Returns:
+            str: the absolute file path.
+        """
         current_directory = os.getcwd()
         file_path = os.path.join(current_directory, relative_path)
 
@@ -45,6 +54,16 @@ class MyLogger(logging.getLoggerClass()):
         return file_path
 
     def logging_results(self, dataset_name: str, dataset_size: int, dataset_language_en: bool, model_name: str, iteration_speed: float, results: list[float]):
+        """Logging results to the file.
+
+        Args:
+            dataset_name (str): The dataset name
+            dataset_size (int): The question count.
+            dataset_language_en (bool): If the language is english or not.
+            model_name (str): The model name that was evaluated.
+            iteration_speed (float): The speed of an evaluation (how many questions the model answered per second).
+            results (list[float]): The accuracies of each seed in the model. 
+        """
         data_to_append = {
             "Date": datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             "Dataset name": dataset_name,
