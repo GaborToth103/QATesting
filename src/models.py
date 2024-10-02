@@ -91,14 +91,7 @@ class ModelLlama(Model):
         return output["choices"][0]["text"].strip()
     
     def generate_question(self, table: str) -> tuple[str, str]:
-        with Suppressor():
-            output = self.model(
-                construct_answer(table, self.prompt_format),
-                max_tokens=None,
-                echo=False,
-                stop=stopping_tokens,
-            )
-        answer: str = output["choices"][0]["text"].strip()
+        answer: str = construct_clean_answer(table)
         with Suppressor():
             output = self.model(
                 construct_question(table, answer, self.prompt_format),
@@ -233,42 +226,6 @@ class ModelTranslate(Model):
         return data_into_list 
 
 if __name__ == "__main__":
-    # ModelTranslate().translate_answers()
-    mymodel = ModelLlama(url="https://huggingface.co/lmstudio-community/Llama-3.2-1B-Instruct-GGUF/resolve/main/Llama-3.2-1B-Instruct-Q3_K_L.gguf")
-
-    data = {
-        'Name': ['Alice', 'Bob', 'Charlie', 'David', 'Eva'],
-        'Age': [25, 30, 35, 40, 28],
-        'Occupation': ['Engineer', 'Doctor', 'Artist', 'Lawyer', 'Scientist'],
-        'Salary': [70000, 120000, 50000, 90000, 95000]
-    }
-
-    df1 = pd.DataFrame(data)
-
-        
-    
-    qa = {
-        'id': [],
-        'utterance': [],
-        'context': [],
-        'targetValue': [],
-    }  
-    df = pd.DataFrame(qa)
-
-    for x in range(0):
-        asd = mymodel.generate_question(df1.to_csv(index=False))
-
-        new_row = {
-            'id': f"nt-{x}",
-            'utterance': asd[0],
-            'context': "table",
-            'targetValue': asd[1],
-        }  
-        df.loc[len(df)] = new_row
-        print(new_row)
-    
-    mydatabase2 = Database("data/fictional.db")    
-    mydatabase2.fill_database(df, "qa_table") # TODO goal
-    
-    generated_text = mymodel.generate_text(0, df1, "Who is an Artist? Answer with a content of single cell?")
+    mymodel = ModelLlama(url="https://huggingface.co/bartowski/Llama-3.2-3B-Instruct-GGUF/resolve/main/Llama-3.2-3B-Instruct-f16.gguf")
+    generated_text = mymodel.generate_text(0, {}, "What is the meaning of life?")
     print(generated_text)

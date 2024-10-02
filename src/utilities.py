@@ -4,6 +4,9 @@ from enum import Enum
 import time
 import subprocess
 import re
+import io
+import csv
+import random
 
 class Suppressor(object):
     def __enter__(self):
@@ -46,30 +49,19 @@ class Prompt(Enum):
     LLAMA2 = 2
     LLAMA3 = 3
     
-def construct_answer(table: str, prompt_type: Prompt | None = None) -> str:
-    """Construct prompt for question generation answer part.
-
-    Args:
-        table (str): table for User Prompt as information to help the model in str format.
-        prompt_type (Prompt | None, optional): The type of prompt as Prompt Enum type, since different model use different type of prompting. Defaults to None.
-    Returns:
-        str: the picked answer (which is a cell) in a string format that can be used directly for generation.
-    """
-    instruction = "Select a single relevant value from the table!"
-    initiator = "A single selected value that are separated by commas is: "
-
-    match prompt_type:
-        case Prompt.MICROSOFT:
-            return f"<|system|>\n{instruction}<|end|>\n<|user|>\n{table}<end>\n<|assistant|>\n{initiator}"
-        case Prompt.LLAMA3:
-            return f"<|im_start|>system\n{instruction}<|im_end|>\n<|im_start|>user\n{table}<|im_end|>\n<|im_start|>assistant\n{initiator}"
-        case Prompt.LLAMA2:
-            return f"[INST] <<SYS>>\n{instruction}\n<</SYS>>\n{table}[/INST]\n{initiator}"
-        case Prompt.LLAMA2HUN:
-            return f"<|system|>\n{instruction}</s><|end|>\n<|user|>\n{table}</s><end>\n<|assistant|>\n{initiator}"
-        case _: 
-            return f"{instruction}\n\n{table}\n\n{initiator}"
+def construct_clean_answer(table: str) -> str:
+    csv_data = io.StringIO(table)
     
+    # Parse the CSV string using the csv.reader
+    reader = list(csv.reader(csv_data))
+    rows = reader[1:]
+    # Flatten the 2D list into a 1D list
+    flattened_list = [item for row in rows for item in row]
+        
+    # Select a random item from the list
+    random_cell = random.choice(flattened_list)
+    return random_cell
+
 def construct_question(table: str, answer: str, prompt_type: Prompt | None = None) -> str:
     """Construct prompt for question generation question part.
 
@@ -82,7 +74,7 @@ def construct_question(table: str, answer: str, prompt_type: Prompt | None = Non
         str: the question in a string frormat that can be used directly for generation.
     """
     instruction = "Generate one relevant question based on the table that aligns with the provided answer."
-    initiator = f"The provided answer is {answer}. The question that makes this answer true is this: "
+    initiator = f'The provided answer is "{answer}" and the question that makes this answer true is: "'
     
     match prompt_type:
         case Prompt.MICROSOFT:
@@ -190,6 +182,11 @@ def scoring(truth: list[str], model_answer: list[str]) -> float:
             result += 1
     return float(result)/float(len(truth))
 
-stopping_tokens = ["<|", "<</", "[/INST]", "[INST]", "</s>", "\n", ". ", "</", "? "]
+stopping_tokens = ["<|", "<</", "[/INST]", "[INST]", "</s>", "\n", ". ", "</", "<|im_end|>", "|<", '"', "'", "' ", '" ']
 translated_questions: list[str] = read_data()
 translated_answers: list[str] = read_data("data/answers_hu.txt")
+
+if __name__ == "__main__":
+    a = construct_clean_answer("""a,b,c,d
+1,2,3,4""")
+    print(a)
