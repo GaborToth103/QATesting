@@ -90,11 +90,11 @@ class ModelLlama(Model):
             )
         return output["choices"][0]["text"].strip()
     
-    def generate_question(self, table: str) -> tuple[str, str]:
+    def generate_question(self, table: str, language_en: bool = True) -> tuple[str, str]:
         answer: str = construct_clean_answer(table)
         with Suppressor():
             output = self.model(
-                construct_question(table, answer, self.prompt_format),
+                construct_question(table, answer, self.prompt_format, language_en),
                 max_tokens=None,
                 echo=False,
                 stop=stopping_tokens,

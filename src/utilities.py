@@ -62,7 +62,7 @@ def construct_clean_answer(table: str) -> str:
     random_cell = random.choice(flattened_list)
     return random_cell
 
-def construct_question(table: str, answer: str, prompt_type: Prompt | None = None) -> str:
+def construct_question(table: str, answer: str, prompt_type: Prompt | None = None, language_en: bool = True) -> str:
     """Construct prompt for question generation question part.
 
     Args:
@@ -73,8 +73,14 @@ def construct_question(table: str, answer: str, prompt_type: Prompt | None = Non
     Returns:
         str: the question in a string frormat that can be used directly for generation.
     """
-    instruction = "Generate one relevant question based on the table that aligns with the provided answer."
-    initiator = f'The provided answer is "{answer}" and the question that makes this answer true is: "'
+
+    if language_en:
+        instruction = f"Below you can see a table with detailed data of people. Generate one relevant question based on the table that aligns with the provided '{answer}' answer!"
+        initiator = f'The provided answer/question pair is: "{answer}"/"'
+    else:
+        instruction = f"Az alábbiakban látható egy táblázat különböző személyek részletes adataival. Állíts össze egy kérdést a táblázat alapján amely illeszkedik a megadott '{answer}' válaszhoz!"      
+        initiator = f'A megadott válasz/kérdés pár: "{answer}"/"'
+
     
     match prompt_type:
         case Prompt.MICROSOFT:
@@ -182,7 +188,7 @@ def scoring(truth: list[str], model_answer: list[str]) -> float:
             result += 1
     return float(result)/float(len(truth))
 
-stopping_tokens = ["<|", "<</", "[/INST]", "[INST]", "</s>", "\n", ". ", "</", "<|im_end|>", "|<", '"', "'", "' ", '" ']
+stopping_tokens = ["<|", "<</", "[/INST]", "[INST]", "</s>", "\n", ". ", "</", "<|im_end|>", "|<", '"', '" ', '"\n']
 translated_questions: list[str] = read_data()
 translated_answers: list[str] = read_data("data/answers_hu.txt")
 

@@ -4,6 +4,7 @@ from models import ModelLlama, Prompt
 from tqdm import tqdm
 from mylogger import MyLogger
 from utilities import *
+import report
 
 class Controller:
     def __init__(self, model_list_path: str, data_path: str) -> None:
@@ -68,3 +69,4 @@ if __name__ == "__main__":
         question_limit=10,
         language_en=True,
     )
+    report.main()
