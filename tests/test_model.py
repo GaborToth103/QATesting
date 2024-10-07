@@ -8,7 +8,7 @@ from llama_cpp import Llama
 class TestCleanString(unittest.TestCase):
     with Suppressor():
         model = Llama(
-            model_path="models/Llama-3.2-1B-Instruct-Q3_K_L.gguf",
+            model_path="models/Llama-3.2-1B-Instruct-Q8_0.gguf",
             n_ctx=0,
             n_gpu_layers=-1,
         )
