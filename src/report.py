@@ -22,7 +22,7 @@ class Report:
         plt.title('Model Accuracies')
         plt.xlabel('Model name')
         plt.ylabel('Accuracy')
-        accuracy_plot = 'data/accuracy_plot.png'
+        accuracy_plot = '/home/p_tabtg/llama_project/QATesting/data/accuracy_plot.png'
         plt.savefig(accuracy_plot)
         plt.close()
         
@@ -33,7 +33,7 @@ class Report:
         plt.xlabel('Model name')
         plt.ylabel('Iteration speed')
 
-        speed_plot = 'data/speed_plot.png'
+        speed_plot = '/home/p_tabtg/llama_project/QATesting/data/speed_plot.png'
         plt.savefig(speed_plot)
         plt.close()
 
@@ -43,7 +43,7 @@ class Report:
     def generate_html_report(df, accuracy_plot, speed_plot, output_html):
         # Create the report content
         env = Environment(loader=FileSystemLoader('.'))
-        template = env.get_template('data/report_template.html')
+        template = env.get_template('/home/p_tabtg/llama_project/QATesting/data/report_template.html')
         
         # Render the template with the data
         html_content = template.render(data=df.to_dict(orient='records'), 
@@ -55,8 +55,8 @@ class Report:
             f.write(html_content)
 
     def main():
-        csv_file = 'data/result.csv'  # Change this to your actual CSV file path
-        output_html = 'data/report.html'
+        csv_file = '/home/p_tabtg/llama_project/QATesting/data/result.csv'  # Change this to your actual CSV file path
+        output_html = '/home/p_tabtg/llama_project/QATesting/data/report.html'
         
         # Step 1: Read the CSV
         df = read_csv(csv_file)

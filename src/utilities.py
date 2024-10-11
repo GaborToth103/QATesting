@@ -112,11 +112,11 @@ def construct_prompt(index_question: int, question: str, table: str, language_en
     # This can be prompt engineered further since these prompts are entirely made up.
     if language_en:
         instruction = "You are a Question answering bot that processes table provided. Based on the table, you answer the questions without explanation. If there are multiple answers, separate them with commas."
-        initiator = "The answer is: "
+        initiator = 'The answer is: "'
     else:
         question = translated_questions[index_question]
         instruction = "Válaszolj az alábbi kérdésre a lenti táblázat alapján! Tömören válaszolj. A válasz csak egy cella tartalma legyen. Ne írj magyarázatot!"        
-        initiator = "A tömör válasz tömören: "
+        initiator = 'A tömör válasz tömören: "'
 
     # This should not be modified, as it matches the training data.
     match prompt_type:
@@ -160,7 +160,9 @@ def get_memory_usage() -> int:
 def clean_string(input_string: str) -> list[str]:
     cleaned_list: list[str] = list()
     if input_string:
-        cleaned_string = re.sub(r"[^\w\s]", "", input_string)
+        cleaned_string = input_string
+        cleaned_string = re.sub(r"[^\w\s]", "", cleaned_string).replace("\xa0", "")
+        cleaned_string = cleaned_string.strip()
         cleaned_string = cleaned_string.lower()
         cleaned_list = cleaned_string.split()
     return cleaned_list
@@ -175,8 +177,8 @@ def scoring(truth: list[str], model_answer: list[str]) -> float:
     Returns:
         bool: the result whether the model_answer is accepted based on the truth.
     """
-    result: int = 0.0
-    cleaned_truth = []
+    result: float = 0.0
+    cleaned_truth = []    
     for truth_chunk in truth:
         cleaned_truth.append(clean_string(truth_chunk))
     cleaned_answer = []
@@ -185,12 +187,12 @@ def scoring(truth: list[str], model_answer: list[str]) -> float:
     
     for answer in cleaned_answer:
         if answer in cleaned_truth:
-            result += 1
-    return float(result)/float(len(truth))
+            result += 1.0
+    return float(result)/float(len(cleaned_truth))
 
 stopping_tokens = ["<|", "<</", "[/INST]", "[INST]", "</s>", "\n", ". ", "</", "<|im_end|>", "|<", '"', '" ', '"\n']
-translated_questions: list[str] = read_data()
-translated_answers: list[str] = read_data("data/answers_hu.txt")
+# translated_questions: list[str] = read_data()
+# translated_answers: list[str] = read_data("data/answers_hu.txt")
 
 if __name__ == "__main__":
     a = construct_clean_answer("""a,b,c,d

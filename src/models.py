@@ -7,6 +7,7 @@ import torch
 from database import Database
 from tqdm import tqdm
 from utilities import *
+import transformers
 
 class Model:
     def __init__(self, url: str = "None/None") -> None:
@@ -42,6 +43,37 @@ class Model:
     
     def __str__(self) -> str:
         return self.name
+
+class ModelTransformer(Model):
+    def __init__(self,
+                 url: str,
+                 model_folder_path: str = '/home/p_tabtg/p_tab_llm_scratch/.hfcache/hub',
+                 context_length: int = 32, prompt_format: Prompt = Prompt.LLAMA3, lang_en: bool = True) -> None:
+        super().__init__()
+        self.name = url
+        self.model_path = model_folder_path
+        self.prompt_format = prompt_format
+        self.lang_en = lang_en
+        self.model = transformers.pipeline(
+            "text-generation",
+            model=self.name,
+            model_kwargs={"torch_dtype": torch.bfloat16,
+                        "cache_dir": model_folder_path},
+            device_map="auto",
+            max_new_tokens = context_length
+        )
+        
+    def generate_text(self, index: int, table: str, question: str) -> str:
+        prompt = construct_prompt(index, question, table, self.lang_en, self.prompt_format)
+        
+        total_answer: str = self.model(prompt)[0]["generated_text"]
+        answer = total_answer[len(prompt):]
+        split_answers = answer.split('"')
+        print("----")
+        print("answer:", answer)
+        print("split_answer:", split_answers)
+        print("first:", split_answers[0])
+        return split_answers[0]
 
 class ModelLlama(Model):
     def __init__(self,

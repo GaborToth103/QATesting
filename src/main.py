@@ -1,10 +1,10 @@
 import pandas as pd
 from database import Database
-from models import ModelLlama, Prompt
+from models import ModelLlama, Prompt, ModelTransformer
 from tqdm import tqdm
 from mylogger import MyLogger
 from utilities import *
-import report
+from report import Report
 
 class Controller:
     def __init__(self, model_list_path: str, data_path: str) -> None:
@@ -50,8 +50,12 @@ class Controller:
         for model_detail in self.model_details.iterrows(): # loop through all models to ask questions from all of them
             try:
                 # evaluation
+                if model_detail[1]['Model type'] == "gguf":
+                    model = ModelLlama(url=model_detail[1]['URL'], n_gpu_layers=int(model_detail[1]['Layer offset count']), prompt_format=Prompt(model_detail[1]['Prompt format']))
+                else: 
+                    model = ModelTransformer(url=model_detail[1]['URL'], prompt_format=Prompt(model_detail[1]['Prompt format']))
                 results, elapsed_time = self.evaluate_model(
-                    ModelLlama(url=model_detail[1]['URL'], n_gpu_layers=int(model_detail[1]['Layer offset count']), prompt_format=Prompt(model_detail[1]['Prompt format'])),
+                    model,
                     seed_count,
                     question_count_to_ask)
                 # logging
@@ -61,12 +65,12 @@ class Controller:
 
 if __name__ == "__main__":
     controller = Controller(
-        model_list_path='data/model_list.csv',
-        data_path='data/database.db',
+        model_list_path='/home/p_tabtg/llama_project/QATesting/data/model_list.csv',
+        data_path='/home/p_tabtg/llama_project/QATesting/data/database.db',
     )
     controller.loop(
         seed_count=1,
-        question_limit=10,
+        question_limit=100,
         language_en=True,
     )
-    report.main()
+    Report().main()

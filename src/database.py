@@ -3,7 +3,7 @@ import sqlite3
 import os
 
 class Database:
-    def __init__(self, path: str = 'data/database.db') -> None:
+    def __init__(self, path: str = '/home/p_tabtg/llama_project/QATesting/data/database.db') -> None:
         self.path = path
 
     def dataframe_from_parquet(self, parquet_path: str) -> pd.DataFrame:
@@ -156,7 +156,14 @@ class Database:
             raise e
         finally:
             connection.close()
-        return df, question, answers.split(',')
+        truth = answers.split(',')
+        answers = []     # '|' needs to be handled as separate answers
+        for truth_chunk in truth:
+            chunks = truth_chunk.split("|")
+            answers += chunks
+        
+        
+        return df, question, answers
     
     def get_database_info(self, ) -> int:
         """Returns the question count from the database.
@@ -183,11 +190,13 @@ class Database:
 
 if __name__ == "__main__":
     # To fill wtq and get something:
-    # mydatabase = Database()
-    # mydatabase.wtq_collector('/home/gabortoth/Dokumentumok/Data/WikiTableQuestions') # this is to upload data
-    # data_table, question, answers = mydatabase.get_question_with_table(0) # this is to get a specific data
-    # print(f"{data_table}\n\n{question}\n{answers}")
+    mydatabase = Database()
+    mydatabase.wtq_collector('/home/p_tabtg/llama_project/data/WikiTableQuestions') # this is to upload data
+    data_table, question, answers = mydatabase.get_question_with_table(0) # this is to get a specific data
+    print(f"{data_table}\n\n{question}\n{answers}")
+    exit()
     
+    # To test the fictional database:
     
     data = {
         'Name': ['Alice', 'Bob', 'Charlie', 'David', 'Eva'],

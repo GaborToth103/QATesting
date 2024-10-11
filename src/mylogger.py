@@ -4,7 +4,7 @@ import pandas as pd
 import datetime
 
 class MyLogger(logging.getLoggerClass()):
-    def __init__(self, name: str = "Logger", level: int | str = 0, log_path = "data/logs.log", result_path = "data/result.csv") -> None:
+    def __init__(self, name: str = "Logger", level: int | str = 0, log_path = "/home/p_tabtg/llama_project/QATesting/data/logs.log", result_path = "/home/p_tabtg/llama_project/QATesting/data/result.csv") -> None:
         super().__init__(name, level)
 
         self.log_path = log_path
