@@ -1,22 +1,27 @@
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
+import re  # Import regular expressions for citation removal
+from io import StringIO
 
-# Define the Wikipedia URL
-url = "https://en.wikipedia.org/wiki/Szeged"
+class WikiYoinker:
+    def __init__(self, url: str = "https://hu.wikipedia.org/wiki/") -> None:
+        self.url = url
 
-# Send a GET request to fetch the page content
-response = requests.get(url)
+    def yoink_page(self, page_name: str) -> tuple[list[pd.DataFrame], list[str]]:
+        """This function should get the whole page and separate tables and the page text as return"""
+        
+        url = self.url + page_name
+        response = requests.get(url)
+        tables: list[pd.DataFrame] = pd.read_html(StringIO(response.text))
+        soup = BeautifulSoup(response.text, 'html.parser')
+        content = soup.find_all(['p'])
+        text = "\n".join([tag.get_text(strip=False) for tag in content])
+        sentences = re.sub(r'\[\d+\]', '', text).strip().replace("\n", " ").replace("  ", " ").split(". ")
+        return tables, [s.strip() for s in sentences]
 
-# Parse the HTML content using BeautifulSoup
-soup = BeautifulSoup(response.text, 'html.parser')
-
-# Find all tables in the Wikipedia page
-tables = soup.find_all('table', {'class': 'wikitable'})
-
-# Extract the first table using pandas
-
-df = pd.read_html(str(tables))
-
-# Show the extracted table data
-print(df)
+if __name__ == "__main__":
+    wikiyoinker = WikiYoinker()
+    tables, sentences = wikiyoinker.yoink_page("Szeged")
+    for table in tables:
+        print(table)
