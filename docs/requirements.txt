@@ -5,6 +5,8 @@ matplotlib
 tqdm
 transformers
 pytest
+bs4
+lxml
 
 # Parquet
 pyarrow

@@ -1,8 +1,10 @@
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
-import re  # Import regular expressions for citation removal
+import re
 from io import StringIO
+
+MINIMUM_TABLE_SIZE = 4
 
 class WikiYoinker:
     def __init__(self, url: str = "https://hu.wikipedia.org/wiki/") -> None:
@@ -24,4 +26,5 @@ if __name__ == "__main__":
     wikiyoinker = WikiYoinker()
     tables, sentences = wikiyoinker.yoink_page("Szeged")
     for table in tables:
-        print(table)
+        if table.shape[0]*table.shape[1] > MINIMUM_TABLE_SIZE:
+            print(table)

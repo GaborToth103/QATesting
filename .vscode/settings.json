@@ -1,4 +1,7 @@
 {
+    "python.terminal.activateEnvInCurrentTerminal": true,
+    "python.defaultInterpreterPath": "~/venv/bin/python",
+    "python.terminal.activateEnvironment": true,
     "python.testing.pytestArgs": [
         "tests"
     ],
