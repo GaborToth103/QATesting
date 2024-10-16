@@ -1,4 +1,4 @@
-<mxfile host="Electron" modified="2024-04-12T21:08:05.064Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/24.1.0 Chrome/120.0.6099.109 Electron/28.1.0 Safari/537.36" etag="HUTLZA535B1fDv7Z9Tcb" version="24.1.0" type="device" pages="3">
+<mxfile host="Electron" agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/24.7.17 Chrome/128.0.6613.36 Electron/32.0.1 Safari/537.36" version="24.7.17" pages="4">
   <diagram id="d12V2TW1IfrBDbDX0Np9" name="main">
     <mxGraphModel dx="1219" dy="906" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="1600" pageHeight="900" math="0" shadow="0">
       <root>
@@ -99,6 +99,92 @@
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="d6E341wsxZ2fcWflmqK5" name="Wikipedia">
+    <mxGraphModel dx="1194" dy="758" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="mEzgYslrIzqiE2LV2ePn-1" value="Wikipedia Yoinker Structure" style="swimlane;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="10" y="10" width="660" height="430" as="geometry" />
+        </mxCell>
+        <mxCell id="mEzgYslrIzqiE2LV2ePn-4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="mEzgYslrIzqiE2LV2ePn-1" source="mEzgYslrIzqiE2LV2ePn-2" target="mEzgYslrIzqiE2LV2ePn-3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="mEzgYslrIzqiE2LV2ePn-2" value="Get all wiki pages" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="mEzgYslrIzqiE2LV2ePn-1">
+          <mxGeometry x="10" y="140" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="mEzgYslrIzqiE2LV2ePn-6" value="No" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="mEzgYslrIzqiE2LV2ePn-1" source="mEzgYslrIzqiE2LV2ePn-3" target="mEzgYslrIzqiE2LV2ePn-5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="mEzgYslrIzqiE2LV2ePn-8" value="Yes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="mEzgYslrIzqiE2LV2ePn-1" source="mEzgYslrIzqiE2LV2ePn-3" target="mEzgYslrIzqiE2LV2ePn-7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="mEzgYslrIzqiE2LV2ePn-3" value="is there any page remaining?" style="rhombus;whiteSpace=wrap;html=1;" vertex="1" parent="mEzgYslrIzqiE2LV2ePn-1">
+          <mxGeometry x="160" y="130" width="80" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="mEzgYslrIzqiE2LV2ePn-5" value="Finish" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;" vertex="1" parent="mEzgYslrIzqiE2LV2ePn-1">
+          <mxGeometry x="160" y="30" width="80" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="mEzgYslrIzqiE2LV2ePn-10" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="mEzgYslrIzqiE2LV2ePn-1" source="mEzgYslrIzqiE2LV2ePn-7" target="mEzgYslrIzqiE2LV2ePn-9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="mEzgYslrIzqiE2LV2ePn-7" value="Get next wiki page" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="mEzgYslrIzqiE2LV2ePn-1">
+          <mxGeometry x="270" y="140" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="mEzgYslrIzqiE2LV2ePn-11" value="No" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="mEzgYslrIzqiE2LV2ePn-1" source="mEzgYslrIzqiE2LV2ePn-9" target="mEzgYslrIzqiE2LV2ePn-3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="mEzgYslrIzqiE2LV2ePn-13" value="Yes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="mEzgYslrIzqiE2LV2ePn-1" source="mEzgYslrIzqiE2LV2ePn-9" target="mEzgYslrIzqiE2LV2ePn-12">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="mEzgYslrIzqiE2LV2ePn-9" value="is there any paragraph with table remaining?" style="rhombus;whiteSpace=wrap;html=1;" vertex="1" parent="mEzgYslrIzqiE2LV2ePn-1">
+          <mxGeometry x="290" y="230" width="80" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="mEzgYslrIzqiE2LV2ePn-21" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="mEzgYslrIzqiE2LV2ePn-1" source="mEzgYslrIzqiE2LV2ePn-12" target="mEzgYslrIzqiE2LV2ePn-18">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="mEzgYslrIzqiE2LV2ePn-12" value="&lt;span style=&quot;color: rgb(240, 240, 240); font-family: Helvetica; font-size: 12px; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: 2; text-align: center; text-indent: 0px; text-transform: none; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; white-space: normal; background-color: rgb(27, 29, 30); text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial; display: inline !important; float: none;&quot;&gt;Get next paragraph with a table&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="mEzgYslrIzqiE2LV2ePn-1">
+          <mxGeometry x="404" y="240" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="mEzgYslrIzqiE2LV2ePn-23" value="No" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="mEzgYslrIzqiE2LV2ePn-1" source="mEzgYslrIzqiE2LV2ePn-18" target="mEzgYslrIzqiE2LV2ePn-9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="mEzgYslrIzqiE2LV2ePn-30" value="Yes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="mEzgYslrIzqiE2LV2ePn-1" source="mEzgYslrIzqiE2LV2ePn-18" target="mEzgYslrIzqiE2LV2ePn-29">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="mEzgYslrIzqiE2LV2ePn-18" value="is there any cell remaining?" style="rhombus;whiteSpace=wrap;html=1;" vertex="1" parent="mEzgYslrIzqiE2LV2ePn-1">
+          <mxGeometry x="424" y="340" width="80" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="mEzgYslrIzqiE2LV2ePn-32" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="mEzgYslrIzqiE2LV2ePn-1" source="mEzgYslrIzqiE2LV2ePn-29" target="mEzgYslrIzqiE2LV2ePn-31">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="mEzgYslrIzqiE2LV2ePn-29" value="Check for context in the paragraph if there is any matching information." style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="mEzgYslrIzqiE2LV2ePn-1">
+          <mxGeometry x="530" y="350" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="mEzgYslrIzqiE2LV2ePn-33" value="No" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="mEzgYslrIzqiE2LV2ePn-1" source="mEzgYslrIzqiE2LV2ePn-31" target="mEzgYslrIzqiE2LV2ePn-12">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="mEzgYslrIzqiE2LV2ePn-35" value="Yes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="mEzgYslrIzqiE2LV2ePn-1" source="mEzgYslrIzqiE2LV2ePn-31" target="mEzgYslrIzqiE2LV2ePn-34">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="mEzgYslrIzqiE2LV2ePn-31" value="is there any info in the paragraph?" style="rhombus;whiteSpace=wrap;html=1;" vertex="1" parent="mEzgYslrIzqiE2LV2ePn-1">
+          <mxGeometry x="550" y="230" width="80" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="mEzgYslrIzqiE2LV2ePn-37" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="mEzgYslrIzqiE2LV2ePn-1" source="mEzgYslrIzqiE2LV2ePn-34" target="mEzgYslrIzqiE2LV2ePn-36">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="mEzgYslrIzqiE2LV2ePn-34" value="Transform table into question with value masking" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="mEzgYslrIzqiE2LV2ePn-1">
+          <mxGeometry x="530" y="140" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="mEzgYslrIzqiE2LV2ePn-38" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="mEzgYslrIzqiE2LV2ePn-1" source="mEzgYslrIzqiE2LV2ePn-36" target="mEzgYslrIzqiE2LV2ePn-12">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="mEzgYslrIzqiE2LV2ePn-36" value="Make the table, question and answer into a database entry" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="mEzgYslrIzqiE2LV2ePn-1">
+          <mxGeometry x="530" y="50" width="120" height="60" as="geometry" />
+        </mxCell>
       </root>
     </mxGraphModel>
   </diagram>
