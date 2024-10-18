@@ -3,17 +3,18 @@ import requests
 from bs4 import BeautifulSoup
 import re  # Import regular expressions for citation removal
 from io import StringIO
+from typing import Dict, List, Tuple
 
-import wikipediaapi
+
 
 class WikiYoinker:
-    def __init__(self, url: str = "https://hu.wikipedia.org/wiki/") -> None:
-        self.url = url
+    def __init__(self, starting_page_name: str = "Szeged", language_code: str = "hu") -> None:
+        self.starting_page_name = starting_page_name
+        self.language_code = language_code
 
-    def yoink_page(self, page_name: str) -> tuple[list[pd.DataFrame], list[str]]:
+    def yoink_page(self, url: str) -> tuple[list[pd.DataFrame], list[str]]:
         """This function should get the whole page and separate tables and the page text as return"""
         
-        url = self.url + page_name
         response = requests.get(url)
         tables: list[pd.DataFrame] = pd.read_html(StringIO(response.text))
         soup = BeautifulSoup(response.text, 'html.parser')
@@ -22,37 +23,149 @@ class WikiYoinker:
         sentences = re.sub(r'\[\d+\]', '', text).strip().replace("\n", " ").replace("  ", " ").split(". ")
         return tables, [s.strip() for s in sentences]
 
-    def get_all_wiki_pages(self, languge_code: str = "hu") -> list[str]:
-        """Gets all wikipedia pages within the certain language code.
+    def get_next_page(self) -> requests.Request:
+        api_url = f"https://{self.language_code}.wikipedia.org/w/api.php"
 
-        Args:
-            languge_code (str, optional): The language code for the countries. Defaults to "hu".
+        def get_next_page(apfrom: str):
+            return apfrom
 
-        Returns:
-            list[str]: list of all wikipedia pages for one specific language
-        """
-        def print_categorymembers(categorymembers, level=0, max_level=1):
-                for c in categorymembers.values():
-                    print("%s: %s (ns: %d)" % ("*" * (level + 1), c.title, c.ns))
-                    if c.ns == wikipediaapi.Namespace.CATEGORY and level < max_level:
-                        print_categorymembers(c.categorymembers, level=level + 1, max_level=max_level)
+        S = requests.Session()
 
-
-        wiki_wiki = wikipediaapi.Wikipedia('MyProjectName (gabor.toth.103@gmail.com)', language=languge_code)
-        asd = wiki_wiki.page("Category:Physics")
-        print("Category members: Category:Physics")
-        print(asd, type(asd))
-        exit()
+        PARAMS = {
+            "action": "query",
+            "format": "json",
+            "list": "allpages",
+            "apfrom": get_next_page(self.starting_page_name),
+            "aplimit": 2,
+        }
 
 
-        print_categorymembers(asd.categorymembers, "asd")
-        list_of_pages: list[str] = []
-        raise NotImplementedError()
-        return list_of_pages
+        R = S.get(url=api_url, params=PARAMS)
+        DATA = R.json()
+        PAGES = DATA["query"]["allpages"][0]["title"]
+        self.starting_page_name = DATA["query"]["allpages"][1]["title"]
+
+        page_url = f"https://hu.wikipedia.org/wiki/{PAGES}"
+
+        request = requests.get(page_url)
+        return request
+
+    def extract_tables_by_h2(self, url: str) -> Dict[str, List[pd.DataFrame]]:
+        # Fetch the response
+        response = requests.get(url)
+
+        # Split the response into chunks by <h2> sections
+        sections = response.text.split('<h2')
+
+        # Dictionary to store tables by section id
+        tables_by_section = {}
+
+        for section in sections[1:]:  # Skip the first chunk since it is before the first <h2>
+            section = '<h2' + section  # Prepend <h2> to the section again
+
+            # Find the ID of the <h2> tag, assuming format <h2 id="section_id">
+            id_start = section.find('id="') + len('id="')
+            id_end = section.find('"', id_start)
+            section_id = section[id_start:id_end]  # Extract the id of the <h2> tag
+
+            # Find the end of the <h2> tag
+            end_of_h2 = section.find('</h2>') + len('</h2>')
+
+            # Extract the part of the section after the <h2> header
+            section_content = section[end_of_h2:]
+
+            # Attempt to extract tables from the current section
+            try:
+                tables = pd.read_html(StringIO(section_content), decimal=",", thousands=" ")
+                for table in tables:
+                    table = table.map(lambda x: str(x).replace('.', ',') if isinstance(x, (int, float, str)) else x)
+                tables_by_section[section_id] = tables  # Store tables under the section id
+            except ValueError:
+                # If no tables were found in this section, continue
+                continue
+
+        return tables_by_section
+
+    def extract_paragraphs_by_h2(self, url: str) -> Dict[str, str]:
+        # Fetch the response
+        response = requests.get(url)
+
+        # Split the response into chunks by <h2> sections
+        sections = response.text.split('<h2')
+
+        # Dictionary to store paragraphs by section id
+        paragraphs_by_section = {}
+
+        for section in sections[1:]:  # Skip the first chunk since it is before the first <h2>
+            section = '<h2' + section  # Prepend <h2> to the section again
+
+            # Find the ID of the <h2> tag
+            id_start = section.find('id="') + len('id="')
+            id_end = section.find('"', id_start)
+            section_id = section[id_start:id_end]  # Extract the id of the <h2> tag
+
+            # Find the end of the <h2> tag
+            end_of_h2 = section.find('</h2>') + len('</h2>')
+
+            # Extract the part of the section after the <h2> header
+            section_content = section[end_of_h2:]
+
+            # Extract <p> tags
+            paragraphs = []
+            while True:
+                p_start = section_content.find('<p')
+                if p_start == -1:
+                    break  # No more <p> tags
+
+                p_end = section_content.find('</p>', p_start) + len('</p>')
+                paragraph = section_content[p_start:p_end]  # Extract the <p> tag content
+                paragraphs.append(paragraph)
+
+                # Remove the processed paragraph from section_content
+                section_content = section_content[p_end:]
+
+            # Unite paragraphs into plain text
+            plain_text = ' '.join(paragraphs).replace('<p>', '').replace('</p>', '').strip()
+            paragraphs_by_section[section_id] = plain_text  # Store plain text under the section id
+
+        return paragraphs_by_section
+
+    def find_matching_words(self, paragraph: str, table: pd.DataFrame) -> List[Dict[str, Tuple[int, int, str]]]:
+        """ FIXME takes a paragraph string and a Pandas DataFrame as input and returns a list of coordinate/sentence pairs where words from the DataFrame match words in the paragraph."""
+        # Preprocess the paragraph to get sentences and words
+        sentences = re.split(r'(?<=[.!?]) +', paragraph)  # Split paragraph into sentences
+        # Create a set of words in the paragraph for exact matching
+        words_in_paragraph = set(re.findall(r'\b\w+\b', paragraph.lower()))  
+
+        # Store results
+        results = []
+
+        # Check each cell in the DataFrame
+        for i, row in table.iterrows():
+            for j, cell in enumerate(row):
+                # Normalize the cell and check for exact matches
+                cell_str = str(cell).strip().lower()
+
+                # Check if the cell itself is an exact match with any sentence
+                if cell_str in [s.lower() for s in sentences]:
+                    for sentence in sentences:
+                        if sentence.lower() == cell_str:
+                            results.append({
+                                'cell_coordinates': (i, j),
+                                'matching_sentence': sentence
+                            })
+        return results
 
 if __name__ == "__main__":
     wikiyoinker = WikiYoinker()
-    tables, sentences = wikiyoinker.yoink_page("Szeged")
-    for table in tables:
-        print(table)
-    wikiyoinker.get_all_wiki_pages()
+    for x in range(1):
+        req = wikiyoinker.get_next_page()
+        tables = wikiyoinker.extract_tables_by_h2(req.url)
+        paragraphs = wikiyoinker.extract_paragraphs_by_h2(req.url)
+        for table in tables["Éghajlata"]:
+            print(table)            
+            results = wikiyoinker.find_matching_words(paragraphs['Éghajlata'], table)
+            for result in results:
+                row, col = result['cell_coordinates']  # Extract row and column coordinates
+                word = table.iat[row, col]  
+                print(f"{word}\t{result['matching_sentence']}")
