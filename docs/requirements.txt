@@ -5,8 +5,11 @@ matplotlib
 tqdm
 transformers
 pytest
+
+# Wikipedia handler
 bs4
 lxml
+html5lib
 
 # Parquet
 pyarrow

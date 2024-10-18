@@ -4,11 +4,17 @@ from bs4 import BeautifulSoup
 import re  # Import regular expressions for citation removal
 from io import StringIO
 from typing import Dict, List, Tuple
+from database import Database
+from transformers import pipeline
+from mylogger import MyLogger
 
 
+skip_sections = {'Kapcsolódó_szócikkek', 'mw-fr-revisionratings-box'}
 
 class WikiYoinker:
     def __init__(self, starting_page_name: str = "Szeged", language_code: str = "hu") -> None:
+        self.logger: MyLogger = MyLogger(log_path='data/wiki.log', result_path='data/wiki.log')
+        self.unmasker = pipeline('fill-mask', model='xlm-roberta-base')
         self.starting_page_name = starting_page_name
         self.language_code = language_code
 
@@ -51,6 +57,7 @@ class WikiYoinker:
         return request
 
     def extract_tables_by_h2(self, url: str) -> Dict[str, List[pd.DataFrame]]:
+        """extract tables for each section. Currently is not working as intended."""
         # Fetch the response
         response = requests.get(url)
 
@@ -78,6 +85,7 @@ class WikiYoinker:
             try:
                 tables = pd.read_html(StringIO(section_content), decimal=",", thousands=" ")
                 for table in tables:
+                    table = table.apply(pd.to_numeric, errors='coerce')
                     table = table.map(lambda x: str(x).replace('.', ',') if isinstance(x, (int, float, str)) else x)
                 tables_by_section[section_id] = tables  # Store tables under the section id
             except ValueError:
@@ -131,41 +139,89 @@ class WikiYoinker:
         return paragraphs_by_section
 
     def find_matching_words(self, paragraph: str, table: pd.DataFrame) -> List[Dict[str, Tuple[int, int, str]]]:
-        """ FIXME takes a paragraph string and a Pandas DataFrame as input and returns a list of coordinate/sentence pairs where words from the DataFrame match words in the paragraph."""
+        """ takes a paragraph string and a Pandas DataFrame as input and returns a list of coordinate/sentence pairs where words from the DataFrame match words in the paragraph."""
         # Preprocess the paragraph to get sentences and words
         sentences = re.split(r'(?<=[.!?]) +', paragraph)  # Split paragraph into sentences
         # Create a set of words in the paragraph for exact matching
-        words_in_paragraph = set(re.findall(r'\b\w+\b', paragraph.lower()))  
+        words_in_paragraph = set(re.findall(r'\b\w+(?:\.\w+)?\b', paragraph.lower()))
 
         # Store results
         results = []
-
+        
         # Check each cell in the DataFrame
         for i, row in table.iterrows():
             for j, cell in enumerate(row):
                 # Normalize the cell and check for exact matches
                 cell_str = str(cell).strip().lower()
-
+                
                 # Check if the cell itself is an exact match with any sentence
-                if cell_str in [s.lower() for s in sentences]:
+                if cell_str in [s.lower() for s in sentences]:  
                     for sentence in sentences:
                         if sentence.lower() == cell_str:
                             results.append({
                                 'cell_coordinates': (i, j),
                                 'matching_sentence': sentence
                             })
+
+                else:
+                    # Check for any word matches (not complete sentences)
+                    if cell_str in words_in_paragraph:
+                        for sentence in sentences:
+                            words_in_sentence = set(re.findall(r'\b\w+(?:\.\w+)?\b', sentence.lower()))
+                            if cell_str in words_in_sentence:
+                                results.append({
+                                    'cell_coordinates': (i, j),
+                                    'matching_sentence': sentence
+                                })
+
         return results
+    
+    def convert_paragraph_to_hungarian_notation(self, text: str) -> str:
+        # Regular expression to find numbers with commas
+        def replace_match(match):
+            return match.group(0).replace(',', '.')
+
+        # Replace only numbers containing commas
+        converted_text = re.sub(r'-?\d+,\d+', replace_match, text)
+        return converted_text
+
+    def clean_html(self, text):
+        clean = re.compile('<.*?>')  # This regex pattern finds all HTML tags
+        return re.sub(clean, '', text)
+    
+    def transform_statement_to_question(self, statement: str, word: str) -> str:
+        """Given a statement with a word, where the word must be masked and we need to replace dot with questionmark at the end."""
+        try:
+            masked_question = statement.replace(word, "<mask>").replace(".", "?")
+            answer = self.unmasker(masked_question)
+            new_question: str = answer[0]['sequence']
+            new_question = answer
+        except:
+            return None
+        return new_question
 
 if __name__ == "__main__":
+    database = Database("data/generated_hu.db")
     wikiyoinker = WikiYoinker()
-    for x in range(1):
+    for x in range(1): # TODO forever and maybe with 500 limit, not 2
         req = wikiyoinker.get_next_page()
         tables = wikiyoinker.extract_tables_by_h2(req.url)
         paragraphs = wikiyoinker.extract_paragraphs_by_h2(req.url)
-        for table in tables["Éghajlata"]:
-            print(table)            
-            results = wikiyoinker.find_matching_words(paragraphs['Éghajlata'], table)
-            for result in results:
-                row, col = result['cell_coordinates']  # Extract row and column coordinates
-                word = table.iat[row, col]  
-                print(f"{word}\t{result['matching_sentence']}")
+        for skip_section in skip_sections:
+            del tables[skip_section]
+            del paragraphs[skip_section]
+        for section, paragraph in paragraphs.items():
+            paragraph = wikiyoinker.clean_html(paragraph)
+            paragraphs[section] = wikiyoinker.convert_paragraph_to_hungarian_notation(paragraph)
+        for section, tables_section in tables.items():
+            for index, table_section in enumerate(tables_section):
+                results = wikiyoinker.find_matching_words(paragraphs[section], table_section)
+                for result in results:
+                    row, col = result['cell_coordinates']
+                    statement = result['matching_sentence']
+                    word = table_section.iat[row, col]
+                    question = wikiyoinker.transform_statement_to_question(statement, word)
+                    wikiyoinker.logger.info(f"{section}(Szekció)\t{word}(Cella)\t{statement}(Mondat)\t{question}(Kérdés)\n{table_section}\n")
+
+                    db_name = f'{req.url}:{section}:{index}'
+                    # database.save_data_to_database(table_section, db_name, question, word) # TODO

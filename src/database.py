@@ -188,6 +188,10 @@ class Database:
         self.fill_database(table, table_name="table")
         self.fill_database(qa_table, table_name="qa_table")
 
+    def save_data_to_database(self, table: pd.DataFrame, question: str, answer: str):        
+        raise NotImplementedError()
+
+
 if __name__ == "__main__":
     # To fill wtq and get something:
     mydatabase = Database()
