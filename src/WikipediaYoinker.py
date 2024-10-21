@@ -13,7 +13,6 @@ skip_sections = {'Kapcsolódó_szócikkek', 'mw-fr-revisionratings-box'}
 
 class WikiYoinker:
     def __init__(self, starting_page_name: str = "Szeged", language_code: str = "hu") -> None:
-        self.logger: MyLogger = MyLogger(log_path='data/wiki.log', result_path='data/wiki.log')
         self.unmasker = pipeline('fill-mask', model='xlm-roberta-base')
         self.starting_page_name = starting_page_name
         self.language_code = language_code
@@ -203,6 +202,7 @@ class WikiYoinker:
 if __name__ == "__main__":
     database = Database("data/generated_hu.db")
     wikiyoinker = WikiYoinker()
+    logger: MyLogger = MyLogger(log_path='data/wiki.log', result_path='data/wiki.log')
     for x in range(1): # TODO forever and maybe with 500 limit, not 2
         req = wikiyoinker.get_next_page()
         tables = wikiyoinker.extract_tables_by_h2(req.url)
@@ -221,7 +221,6 @@ if __name__ == "__main__":
                     statement = result['matching_sentence']
                     word = table_section.iat[row, col]
                     question = wikiyoinker.transform_statement_to_question(statement, word)
-                    wikiyoinker.logger.info(f"{section}(Szekció)\t{word}(Cella)\t{statement}(Mondat)\t{question}(Kérdés)\n{table_section}\n")
-
+                    logger.info(f"{section}(Szekció)\t{word}(Cella)\t{statement}(Mondat)\t{question}(Kérdés)\n{table_section}\n")
                     db_name = f'{req.url}:{section}:{index}'
-                    # database.save_data_to_database(table_section, db_name, question, word) # TODO
+                    database.save_data_to_database(table_section, db_name, question, word)

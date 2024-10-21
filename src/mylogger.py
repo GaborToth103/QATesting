@@ -6,7 +6,7 @@ import datetime
 class MyLogger(logging.getLoggerClass()):
     def __init__(self, name: str = "Logger", level: int | str = 0, log_path = "/home/p_tabtg/llama_project/QATesting/data/logs.log", result_path = "/home/p_tabtg/llama_project/QATesting/data/result.csv") -> None:
         super().__init__(name, level)
-
+        
         self.log_path = log_path
         self.result_path = result_path        
         self.create_file_if_not_exists(log_path, True)
@@ -19,7 +19,7 @@ class MyLogger(logging.getLoggerClass()):
         console_handler.setLevel("WARNING")
         self.addHandler(console_handler)
 
-        file_handler = logging.FileHandler(log_path)
+        file_handler = logging.FileHandler(log_path, encoding='utf-8')
         file_handler.setFormatter(formatter)
         self.addHandler(file_handler)
 
@@ -83,4 +83,5 @@ class MyLogger(logging.getLoggerClass()):
         raise NotImplementedError
 
 if __name__ == "__main__":
-    MyLogger().make_report()
+    # MyLogger().make_report()
+    MyLogger(log_path="data/asd.log", result_path="data/asd.log").info("haló")
