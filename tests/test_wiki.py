@@ -6,12 +6,24 @@ sys.path.append(f"{os.getcwd()}/src")
 import unittest
 from WikipediaYoinker import WikiYoinker
 
-class TestWikiYoinker(unittest.TestCase):
-
-    def yoink_page(self):
-        """TODO check english, hungarian and """
-        tables, texts = WikiYoinker.yoink_page()
-        self.assertEqual(False, False)
+class TestWikiYoinker(unittest.TestCase):        
+    def test_transform_statement_to_question(self):
+        wikiyoinker = WikiYoinker()
+        
+        # TODO more testcases
+        pairs = [
+            ("Őt Gábornak hívják!", "Gábornak"),
+            ("A labda piros.", "piros")
+        ]
+        for pair in pairs:
+            question = wikiyoinker.transform_statement_to_question(*pair)
+            print(question)
+            self.assertEqual(type(question), str)
+            self.assertEqual(question[-1], "?")
+            self.assertNotIn("<mask>", question)
+        
+        
+        
         
 if __name__ == "__main__":
     unittest.main()

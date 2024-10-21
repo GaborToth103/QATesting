@@ -219,23 +219,29 @@ class WikiYoinker:
         masked_question = statement.replace(word, mask_string)[:-1] + "?"
         mask_count = masked_question.count(mask_string)
         answer = self.unmasker(f"Kérdés: {masked_question}\nVálasz: {word}.")
+        good_question = ""
         while mask_count != 1:
-            good_question = ""
+            # TODO good question must be passed if makes sense
             for x in range(mask_count):
                 if answer[0][x]['token_str'].lower().strip() in hungarian_question_words:
-                    good_question = masked_question.replace(mask_string, answer[0][0]['token_str'], 1)
+                    good_question = masked_question
+                    good_question = good_question.replace(mask_string, answer[0][0]['token_str'], 1)
                     mask_count = good_question.count(mask_string)
                     answer = self.unmasker(f"Kérdés: {good_question}\nVálasz: {word}.")
                     break
             if good_question:
                 continue
+            good_question = ""
             masked_question = masked_question.replace(mask_string, answer[0][0]['token_str'], 1)            
             mask_count = masked_question.count(mask_string)
             answer = self.unmasker(f"Kérdés: {masked_question}\nVálasz: {word}.")
 
-        valid_question = self.has_question_candidates(answer)
-        if valid_question:
-            return valid_question
+        if good_question:
+            return good_question
+
+        valid_token = self.has_question_candidates(answer)
+        if valid_token:
+            return masked_question.replace(word, valid_token)[:-1] + "?"
         raise Exception(f"No valid solution found: {answer}")
     
     def has_question_candidates(self, answers: list[dict]) -> str | None:
@@ -249,12 +255,13 @@ class WikiYoinker:
         """
         for answer in answers:
             if answer['token_str'].lower() in hungarian_question_words:
-                return answer['sequence']
+                return answer['token_str']
         return None
         
 
 if __name__ == "__main__":
     database = Database("data/generated_hu.db")
+    database.empty_database()
     wikiyoinker = WikiYoinker()
     logger: MyLogger = MyLogger(log_path='data/wiki.log', result_path='data/wiki.log')
     for x in range(1): # TODO forever and maybe with 500 limit, not 2
@@ -277,7 +284,8 @@ if __name__ == "__main__":
                     try:
                         question = wikiyoinker.transform_statement_to_question(statement, word)
                         logger.info(f"{section}(Szekció)\t{word}(Cella)\t{statement}(Mondat)\t{question}(Kérdés)\n{table_section}\n")
-                        db_name = f'{req.url}:{section}:{index}'
+                        db_name = f'{req.url.split("/")[-1]}:{section}:{index}'
+                        database.generate_questions_table(F, table_section, [(question, word)], if_exists='append')
+                        print("yay")
                     except Exception as e:
                         logger.debug(e)
-                    # database.save_data_to_database(table_section, db_name, question, word)

@@ -3,8 +3,9 @@ import sqlite3
 import os
 
 class Database:
-    def __init__(self, path: str = '/home/p_tabtg/llama_project/QATesting/data/database.db') -> None:
+    def __init__(self, path: str = '/home/p_tabtg/llama_project/QATesting/data/database.db', qa_table_name: str = "qa_table") -> None:
         self.path = path
+        self.qa_table_name = qa_table_name
 
     def dataframe_from_parquet(self, parquet_path: str) -> pd.DataFrame:
         """Generates dataframe from a parquet.
@@ -54,7 +55,7 @@ class Database:
 
         def upload_questiontables_to_database(directory: str):
             df = pd.read_csv(directory, delimiter="\t")
-            return self.fill_database(df, "qa_table")            
+            return self.fill_database(df, self.qa_table_name)            
 
         csv_files = collect_tables(f'{wtq_path}/csv')
         upload_tables_to_database(tables=csv_files)
@@ -73,7 +74,7 @@ class Database:
         table = pd.DataFrame(row_list, columns=row['table']['header'])        
         return table, row['question'], " ".join(row['answers']) 
 
-    def fill_database(self, table: pd.DataFrame, table_name: str) -> str | None:
+    def fill_database(self, table: pd.DataFrame, table_name: str, if_exists = 'replace') -> str | None:
         """ Makes an SQL table based on the pandas table and pushes to the database.
 
         Args:
@@ -87,7 +88,7 @@ class Database:
         try:
             table.rename(columns={'%': 'Percentage'}, inplace=True)
             table.rename(columns={'': 'Empty'}, inplace=True)
-            table.to_sql(table_name, conn, if_exists='replace', index=False)
+            table.to_sql(table_name, conn, if_exists=if_exists, index=False)
             conn.commit()
         except pd.errors.DatabaseError as error:
             print(table_name)
@@ -143,7 +144,7 @@ class Database:
         connection = sqlite3.connect(self.path)
         try:
             cursor = connection.cursor()
-            query = f"SELECT utterance, context, targetValue FROM qa_table where id = 'nt-{id}'"
+            query = f"SELECT utterance, context, targetValue FROM {self.qa_table_name} where id = 'nt-{id}'"
             cursor.execute(query)
             question, data_path, answers = cursor.fetchone()
             cursor = connection.cursor()
@@ -172,31 +173,90 @@ class Database:
             int: the question count.
         """
         connection = sqlite3.connect(self.path)
-        data: int = 0
         try:
             cursor = connection.cursor()
-            query = f"SELECT COUNT(*) FROM qa_table"
-            cursor.execute(query)
-            data = int(cursor.fetchone()[0])
+            cursor.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name='{self.qa_table_name}';")
+            table_exists = cursor.fetchone() is not None
+            if table_exists:
+                query = f"SELECT COUNT(*) FROM {self.qa_table_name}"
+                cursor.execute(query)
+                record_count = int(cursor.fetchone()[0])
+            else:
+                record_count = 0                
+            return record_count
+        except sqlite3.OperationalError as e:
+            print(e) # If table does not exist
+            raise e
         except Exception as e:
             print(e)
+            raise e
         finally:
             connection.close()
-        return data
     
-    def generate_questions_table(self, table: pd.DataFrame, qa_table: pd.DataFrame):
-        self.fill_database(table, table_name="table")
-        self.fill_database(qa_table, table_name="qa_table")
+    def generate_questions_table(self, table_name: str, table: pd.DataFrame, qa_pairs: list[tuple[str, list[str]]], if_exists='replace') -> None:
+        """Fills the database with the table name and it's table, with question and aswer pairs belonging to this table 
 
-    def save_data_to_database(self, table: pd.DataFrame, table_name: str, question: str, answer: str):        
-        raise NotImplementedError()
-    
+        Args:
+            table_name (str): The table name
+            table (pd.DataFrame): The table
+            qa_pairs (list[tuple[str, str]]): the list of question/answer pairs
+        """
+        qa = {
+            'id': [],
+            'utterance': [],
+            'context': [],
+            'targetValue': [],
+        }
+        
+        if if_exists == 'replace':
+            self.empty_database()
+        
+        question_count = self.get_database_info()
+        for index, qa_pair in enumerate(qa_pairs):
+            qa['id'].append(f'nt-{question_count + index}')
+            qa['utterance'].append(qa_pair[0])
+            qa['context'].append(table_name)
+            qa['targetValue'].append(qa_pair[1])
+        qa_table = pd.DataFrame(qa)
+                
+        self.fill_database(table, table_name=table_name, if_exists=if_exists)
+        self.fill_database(qa_table, table_name=self.qa_table_name, if_exists=if_exists)
+
+    def empty_database(self):
+        conn = sqlite3.connect(self.path)
+        cursor = conn.cursor()
+
+        # Fetch all table names
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+        tables = cursor.fetchall()
+
+        # Drop each table
+        for table in tables:
+            cursor.execute(f'DROP TABLE "{table[0]}";')
+            print(f'Table {table[0]} dropped.')
+
+        conn.commit()
+        conn.close()
+        print('All tables dropped. Database is now empty.')
+        
 if __name__ == "__main__":
-    data = {
+    test_database_path = "data/test_database.db"
+    wtq_path = '/home/gabortoth/Dokumentumok/Data/WikiTableQuestions'
+
+    # TODO make sure the function takes a table, a section_tableno name, and a list of qa tuples.
+    table = pd.DataFrame({
         'Name': ['Alice', 'Bob', 'Charlie', 'David', 'Eva'],
         'Age': [25, 30, 35, 40, 28],
         'Occupation': ['Engineer', 'Doctor', 'Artist', 'Lawyer', 'Scientist'],
         'Salary': [70000, 120000, 50000, 90000, 95000]
-    }
-    df = pd.DataFrame(data)
-    save_data_to_database()
+    })        
+    qa = [('How old is alice?', '25'), ('What is the occupation of Bob?', 'Doctor'), ('Who earns 50000?','Charlie')]
+    section_table_id = 'People_0'
+
+    # Execution
+    db = Database(test_database_path)    
+    db.generate_questions_table(section_table_id, table, qa, 'replace')
+    # Test
+    for x in range(db.get_database_info()):
+        table, question, answers = db.get_question_with_table(x)
+        print(table, question, answers)
