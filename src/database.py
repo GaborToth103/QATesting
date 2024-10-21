@@ -190,18 +190,8 @@ class Database:
 
     def save_data_to_database(self, table: pd.DataFrame, table_name: str, question: str, answer: str):        
         raise NotImplementedError()
-
-
+    
 if __name__ == "__main__":
-    # To fill wtq and get something:
-    mydatabase = Database()
-    mydatabase.wtq_collector('/home/p_tabtg/llama_project/data/WikiTableQuestions') # this is to upload data
-    data_table, question, answers = mydatabase.get_question_with_table(0) # this is to get a specific data
-    print(f"{data_table}\n\n{question}\n{answers}")
-    exit()
-    
-    # To test the fictional database:
-    
     data = {
         'Name': ['Alice', 'Bob', 'Charlie', 'David', 'Eva'],
         'Age': [25, 30, 35, 40, 28],
@@ -209,16 +199,4 @@ if __name__ == "__main__":
         'Salary': [70000, 120000, 50000, 90000, 95000]
     }
     df = pd.DataFrame(data)
-    qa = {
-        'id': ['nt-0'],
-        'utterance': ['asd'],
-        'context': ['table'],
-        'targetValue': ['0'],
-    }    
-    df2 = pd.DataFrame(qa)
-
-    # To fill fictional and get something:
-    mydatabase2 = Database("data/fictional.db")    
-    mydatabase2.generate_questions_table(df, df2)
-    data_table, question, answers = mydatabase2.get_question_with_table(0)
-    print(f"{data_table}\n\n{question}\n{answers}")
+    save_data_to_database()

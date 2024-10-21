@@ -10,6 +10,28 @@ from mylogger import MyLogger
 
 
 skip_sections = {'Kapcsolódó_szócikkek', 'mw-fr-revisionratings-box'}
+hungarian_question_words = ['ki',
+ 'kik',
+ 'mi',
+ 'mik',
+ 'kit',
+ 'mit',
+ 'kivel',
+ 'mivel',
+ 'hol',
+ 'hová',
+ 'honnan',
+ 'mikor',
+ 'hány órakor',
+ 'meddig',
+ 'miért',
+ 'mióta',
+ 'milyen gyakran',
+ 'hány',
+ 'mennyi',
+ 'hányszor']
+
+
 
 class WikiYoinker:
     def __init__(self, starting_page_name: str = "Szeged", language_code: str = "hu") -> None:
@@ -140,7 +162,9 @@ class WikiYoinker:
     def find_matching_words(self, paragraph: str, table: pd.DataFrame) -> List[Dict[str, Tuple[int, int, str]]]:
         """ takes a paragraph string and a Pandas DataFrame as input and returns a list of coordinate/sentence pairs where words from the DataFrame match words in the paragraph."""
         # Preprocess the paragraph to get sentences and words
-        sentences = re.split(r'(?<=[.!?]) +', paragraph)  # Split paragraph into sentences
+        sentences = re.split(r'(?<=[.!?;,])\s+', paragraph)  # Split paragraph into sentences
+        larger_sentences = re.split(r'(?<=[.!?])\s+', paragraph)  # Split paragraph with less stuff to split by: larger sentences
+        sentences = list(set(sentences + larger_sentences)) # combine both without duplicates
         # Create a set of words in the paragraph for exact matching
         words_in_paragraph = set(re.findall(r'\b\w+(?:\.\w+)?\b', paragraph.lower()))
 
@@ -190,14 +214,44 @@ class WikiYoinker:
     
     def transform_statement_to_question(self, statement: str, word: str) -> str:
         """Given a statement with a word, where the word must be masked and we need to replace dot with questionmark at the end."""
-        try:
-            masked_question = statement.replace(word, "<mask>").replace(".", "?")
-            answer = self.unmasker(masked_question)
-            new_question: str = answer[0]['sequence']
-            new_question = answer
-        except:
-            return None
-        return new_question
+        answer = None
+        mask_string = "<mask>"
+        masked_question = statement.replace(word, mask_string)[:-1] + "?"
+        mask_count = masked_question.count(mask_string)
+        answer = self.unmasker(f"Kérdés: {masked_question}\nVálasz: {word}.")
+        while mask_count != 1:
+            good_question = ""
+            for x in range(mask_count):
+                if answer[0][x]['token_str'].lower().strip() in hungarian_question_words:
+                    good_question = masked_question.replace(mask_string, answer[0][0]['token_str'], 1)
+                    mask_count = good_question.count(mask_string)
+                    answer = self.unmasker(f"Kérdés: {good_question}\nVálasz: {word}.")
+                    break
+            if good_question:
+                continue
+            masked_question = masked_question.replace(mask_string, answer[0][0]['token_str'], 1)            
+            mask_count = masked_question.count(mask_string)
+            answer = self.unmasker(f"Kérdés: {masked_question}\nVálasz: {word}.")
+
+        valid_question = self.has_question_candidates(answer)
+        if valid_question:
+            return valid_question
+        raise Exception(f"No valid solution found: {answer}")
+    
+    def has_question_candidates(self, answers: list[dict]) -> str | None:
+        """Checks if the answer has any token string that is equal to a hungarian question word.
+
+        Args:
+            answer (list[dict]): the answer from a ROBERTA model
+
+        Returns:
+            bool: if any of the answer[x]['token_str'] variable is in the hqw table  
+        """
+        for answer in answers:
+            if answer['token_str'].lower() in hungarian_question_words:
+                return answer['sequence']
+        return None
+        
 
 if __name__ == "__main__":
     database = Database("data/generated_hu.db")
@@ -218,9 +272,12 @@ if __name__ == "__main__":
                 results = wikiyoinker.find_matching_words(paragraphs[section], table_section)
                 for result in results:
                     row, col = result['cell_coordinates']
-                    statement = result['matching_sentence']
-                    word = table_section.iat[row, col]
-                    question = wikiyoinker.transform_statement_to_question(statement, word)
-                    logger.info(f"{section}(Szekció)\t{word}(Cella)\t{statement}(Mondat)\t{question}(Kérdés)\n{table_section}\n")
-                    db_name = f'{req.url}:{section}:{index}'
-                    database.save_data_to_database(table_section, db_name, question, word)
+                    statement = result['matching_sentence'].lower().strip()
+                    word = str(table_section.iat[row, col]).lower().strip()
+                    try:
+                        question = wikiyoinker.transform_statement_to_question(statement, word)
+                        logger.info(f"{section}(Szekció)\t{word}(Cella)\t{statement}(Mondat)\t{question}(Kérdés)\n{table_section}\n")
+                        db_name = f'{req.url}:{section}:{index}'
+                    except Exception as e:
+                        logger.debug(e)
+                    # database.save_data_to_database(table_section, db_name, question, word)
