@@ -30,7 +30,7 @@ hungarian_question_words = ['ki',
 
 class Section:    
     def __init__(self, section_name: str, raw_section_data: str) -> None:
-        """TODO A wikipedia section. Process raw section data into a paragraph/list of tables.
+        """A wikipedia section. Process raw section data into a paragraph/list of tables.
 
         Args:
             section_name (str): _description_
@@ -39,14 +39,77 @@ class Section:
         self.section_name: str = section_name
         self.paragraph: str = self.extract_paragraph(raw_section_data)
         self.list_of_tables: list[pd.DataFrame] = self.extract_tables(raw_section_data)
+
+    @staticmethod
+    def convert_paragraph_to_hungarian_notation(text: str) -> str:
+        # Regular expression to find numbers with commas
+        def replace_match(match):
+            return match.group(0).replace(',', '.')
+
+        # Replace only numbers containing commas
+        converted_text = re.sub(r'-?\d+,\d+', replace_match, text)
+        return converted_text
+
+
+    @staticmethod
+    def clean_html(text):
+        clean = re.compile('<.*?>')  # This regex pattern finds all HTML tags
+        return re.sub(clean, '', text)
+
         
-    def extract_paragraph(self, raw_section_data: str) -> str:
-        raise NotImplementedError()
+    @staticmethod
+    def extract_paragraph(raw_section_data: str) -> str:
+        """Extract the paragraphs (non-table string data) from the section and combines those into a large paragraph. 
+
+        Args:
+            raw_section_data (str): The h2 section chunk of a html page
+
+        Returns:
+            str: the combined paragraph 
+        """
+        paragraphs = []
+        while True:
+            p_start = raw_section_data.find('<p')
+            if p_start == -1:
+                break  # No more <p> tags
+
+            p_end = raw_section_data.find('</p>', p_start) + len('</p>')
+            paragraph = raw_section_data[p_start:p_end]  # Extract the <p> tag content
+            paragraphs.append(paragraph)
+
+            # Remove the processed paragraph from section_content
+            raw_section_data = raw_section_data[p_end:]
+
+        # Unite paragraphs into plain text
+        plain_text: str = ' '.join(paragraphs).replace('<p>', '').replace('</p>', '').strip()
+
+        plain_text = Section.clean_html(plain_text)
+        plain_text = Section.convert_paragraph_to_hungarian_notation(plain_text)
+
+
+        return plain_text
         
 
-    def extract_tables(self, raw_section_data: str) -> list[pd.DataFrame]:
-        raise NotImplementedError()
-    
+    @staticmethod
+    def extract_tables(raw_section_data: str) -> list[pd.DataFrame]:
+        """Extract tables of a section data.
+
+        Args:
+            raw_section_data (str): The section chunk of a html page
+
+        Returns:
+            list[pd.DataFrame]: list of tables in pandas dataframe format.
+        """
+
+        try:
+            tables = pd.read_html(StringIO(raw_section_data), decimal=",", thousands=" ")
+            for table in tables:
+                table = table.apply(pd.to_numeric, errors='coerce')
+                table = table.map(lambda x: str(x).replace('.', ',') if isinstance(x, (int, float, str)) else x)
+                return tables
+        except ValueError:
+            # If no tables were found in this section, continue
+            return []
 
 class WikiYoinker:
     def __init__(self, starting_page_name: str = "Szeged", language_code: str = "hu") -> None:
@@ -64,6 +127,46 @@ class WikiYoinker:
         text = "\n".join([tag.get_text(strip=False) for tag in content])
         sentences = re.sub(r'\[\d+\]', '', text).strip().replace("\n", " ").replace("  ", " ").split(". ")
         return tables, [s.strip() for s in sentences]
+
+    def convert_url_to_section_data(self, url: str) -> list[Section]:
+        """Splits URL content into section chunks with section id.
+
+        Args:
+            url (str): the URL to convert
+
+        Returns:
+            list[Section]: list of sections in the url
+        """
+        response = requests.get(url)
+
+        # Split the response into chunks by <h2> sections
+        sections = response.text.split('<h2')
+
+        # Dictionary to store tables by section id
+        section_objs: list[Section] = []
+
+        for section in sections[1:]:  # Skip the first chunk since it is before the first <h2>
+            section = '<h2' + section  # Prepend <h2> to the section again
+
+            # Find the ID of the <h2> tag, assuming format <h2 id="section_id">
+            id_start = section.find('id="') + len('id="')
+            id_end = section.find('"', id_start)
+            section_id = section[id_start:id_end]  # Extract the id of the <h2> tag
+            
+            # Skip bannde section titles
+            if section_id in skip_sections:
+                continue
+
+            # Find the end of the <h2> tag
+            end_of_h2 = section.find('</h2>') + len('</h2>')
+
+            # Extract the part of the section after the <h2> header
+            section_content = section[end_of_h2:]
+            
+            new_section = Section(section_name=section_id, raw_section_data=section_content)
+            section_objs.append(new_section)
+
+        return section_objs
 
     def get_next_500_page(self) -> list[str]:
         raise NotImplementedError()
@@ -177,12 +280,15 @@ class WikiYoinker:
 
         return paragraphs_by_section
 
-    def find_matching_words(self, paragraph: str, table: pd.DataFrame) -> List[Dict[str, Tuple[int, int, str]]]:
+    def find_matching_words(self, paragraph: str, table: pd.DataFrame, strict: bool = True) -> List[Dict[str, Tuple[int, int, str]]]:
         """ takes a paragraph string and a Pandas DataFrame as input and returns a list of coordinate/sentence pairs where words from the DataFrame match words in the paragraph."""
         # Preprocess the paragraph to get sentences and words
-        sentences = re.split(r'(?<=[.!?;,])\s+', paragraph)  # Split paragraph into sentences
-        larger_sentences = re.split(r'(?<=[.!?])\s+', paragraph)  # Split paragraph with less stuff to split by: larger sentences
-        sentences = list(set(sentences + larger_sentences)) # combine both without duplicates
+        if strict:
+            sentences = re.split(r'(?<=[.!?])\s+', paragraph)  # Split paragraph with less stuff to split by: larger sentences
+        else:
+            sentences = re.split(r'(?<=[.!?;,])\s+', paragraph)  # Split paragraph into sentences
+            larger_sentences = re.split(r'(?<=[.!?])\s+', paragraph)  # Split paragraph with less stuff to split by: larger sentences
+            sentences = list(set(sentences + larger_sentences)) # combine both without duplicates
         # Create a set of words in the paragraph for exact matching
         words_in_paragraph = set(re.findall(r'\b\w+(?:\.\w+)?\b', paragraph.lower()))
 
@@ -257,48 +363,37 @@ class WikiYoinker:
             if answer['token_str'].lower() in hungarian_question_words:
                 return answer['token_str']
         return None
-
-    def yoink_one_page(url: str) -> tuple[list, list]:
-        """Yoinks one page and returns the tables and paragraphs for each section
-
-        Args:
-            url (str): the url to yoink stuff
-
-        Returns:
-            tuple[list, list]: _description_
-        """
-        pass
-
-if __name__ == "__main__":
-    database = Database("data/generated_hu.db")
-    database.empty_database()
-    wikiyoinker = WikiYoinker()
-    logger: MyLogger = MyLogger(log_path='data/wiki.log', result_path='data/wiki.log')
-    for x in range(500): # TODO forever and maybe with 500 limit, not 2
-        req = wikiyoinker.get_next_page()
-        tables = wikiyoinker.extract_tables_by_h2(req.url)
-        paragraphs = wikiyoinker.extract_paragraphs_by_h2(req.url)
-        for skip_section in skip_sections:
-            try:
-                del tables[skip_section]
-                del paragraphs[skip_section]
-            except Exception as e:
-                logger.warn(e)
-        for section, paragraph in paragraphs.items():
-            paragraph = wikiyoinker.clean_html(paragraph)
-            paragraphs[section] = wikiyoinker.convert_paragraph_to_hungarian_notation(paragraph)
-        for section, tables_section in tables.items():
-            for index, table_section in enumerate(tables_section):
-                results = wikiyoinker.find_matching_words(paragraphs[section], table_section)
+    
+    def process_sections(self, sections: list[Section], logger, database):
+        for section in sections:
+            for index, table_section in enumerate(section.list_of_tables):
+                results = self.find_matching_words(section.paragraph, table_section, strict=False)
                 for result in results:
                     row, col = result['cell_coordinates']
                     statement = result['matching_sentence'].lower().strip()
                     word = str(table_section.iat[row, col]).lower().strip()
                     try:
-                        question = wikiyoinker.transform_statement_to_question(statement, word)
+                        question = self.transform_statement_to_question(statement, word)
                         logger.info(f"{section}(Szekció)\t{word}(Cella)\t{statement}(Mondat)\t{question}(Kérdés)\n{table_section}\n")
                         replaced_url = req.url.split("/")[-1].encode('ascii', 'replace').decode('ascii')
                         db_name = f'{replaced_url}:{section}:{index}'
                         database.generate_questions_table(db_name, table_section, [(question, word)], if_exists='append')
                     except Exception as e:
                         logger.debug(e)
+
+if __name__ == "__main__":
+    # TODO launch yoinker from here
+    data_path = "data/generated_hu.db"
+    starting_page = "Szeged"
+    log_path = 'data/wiki.log'
+    page_count = 1
+    
+    database = Database(data_path)
+    database.empty_database()
+    logger: MyLogger = MyLogger(log_path=log_path, result_path=log_path)
+    
+    wikiyoinker = WikiYoinker(starting_page_name=starting_page)
+    for x in range(page_count):
+        req = wikiyoinker.get_next_page()
+        sections = wikiyoinker.convert_url_to_section_data(req.url)
+        wikiyoinker.process_sections(sections, logger, database)
