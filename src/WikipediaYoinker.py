@@ -8,7 +8,6 @@ from database import Database
 from transformers import pipeline
 from mylogger import MyLogger
 
-
 skip_sections = {'Kapcsolódó_szócikkek', 'mw-fr-revisionratings-box'}
 hungarian_question_words = ['ki',
  'kik',
@@ -22,21 +21,37 @@ hungarian_question_words = ['ki',
  'hová',
  'honnan',
  'mikor',
- 'hány órakor',
  'meddig',
- 'miért',
  'mióta',
  'milyen gyakran',
  'hány',
  'mennyi',
  'hányszor']
 
+class Section:    
+    def __init__(self, section_name: str, raw_section_data: str) -> None:
+        """TODO A wikipedia section. Process raw section data into a paragraph/list of tables.
 
+        Args:
+            section_name (str): _description_
+            raw_section_data (str): _description_
+        """
+        self.section_name: str = section_name
+        self.paragraph: str = self.extract_paragraph(raw_section_data)
+        self.list_of_tables: list[pd.DataFrame] = self.extract_tables(raw_section_data)
+        
+    def extract_paragraph(self, raw_section_data: str) -> str:
+        raise NotImplementedError()
+        
+
+    def extract_tables(self, raw_section_data: str) -> list[pd.DataFrame]:
+        raise NotImplementedError()
+    
 
 class WikiYoinker:
     def __init__(self, starting_page_name: str = "Szeged", language_code: str = "hu") -> None:
         self.unmasker = pipeline('fill-mask', model='xlm-roberta-base')
-        self.starting_page_name = starting_page_name
+        self.starting_page_title = starting_page_name
         self.language_code = language_code
 
     def yoink_page(self, url: str) -> tuple[list[pd.DataFrame], list[str]]:
@@ -50,6 +65,9 @@ class WikiYoinker:
         sentences = re.sub(r'\[\d+\]', '', text).strip().replace("\n", " ").replace("  ", " ").split(". ")
         return tables, [s.strip() for s in sentences]
 
+    def get_next_500_page(self) -> list[str]:
+        raise NotImplementedError()
+
     def get_next_page(self) -> requests.Request:
         api_url = f"https://{self.language_code}.wikipedia.org/w/api.php"
 
@@ -62,17 +80,17 @@ class WikiYoinker:
             "action": "query",
             "format": "json",
             "list": "allpages",
-            "apfrom": get_next_page(self.starting_page_name),
+            "apfrom": get_next_page(self.starting_page_title),
             "aplimit": 2,
         }
 
 
         R = S.get(url=api_url, params=PARAMS)
-        DATA = R.json()
-        PAGES = DATA["query"]["allpages"][0]["title"]
-        self.starting_page_name = DATA["query"]["allpages"][1]["title"]
+        data = R.json()
+        next_page_title = data["query"]["allpages"][0]["title"]
+        self.starting_page_title = data["query"]["allpages"][1]["title"]
 
-        page_url = f"https://hu.wikipedia.org/wiki/{PAGES}"
+        page_url = f"https://hu.wikipedia.org/wiki/{next_page_title}"
 
         request = requests.get(page_url)
         return request
@@ -212,36 +230,18 @@ class WikiYoinker:
         clean = re.compile('<.*?>')  # This regex pattern finds all HTML tags
         return re.sub(clean, '', text)
     
-    def transform_statement_to_question(self, statement: str, word: str) -> str:
+    def transform_statement_to_question(self, statement: str, word: str) -> str:        
         """Given a statement with a word, where the word must be masked and we need to replace dot with questionmark at the end."""
-        answer = None
         mask_string = "<mask>"
         masked_question = statement.replace(word, mask_string)[:-1] + "?"
         mask_count = masked_question.count(mask_string)
+        if mask_count != 1:
+            raise Exception("Multiple answer word found in the sentence.")
+
         answer = self.unmasker(f"Kérdés: {masked_question}\nVálasz: {word}.")
-        good_question = ""
-        while mask_count != 1:
-            # TODO good question must be passed if makes sense
-            for x in range(mask_count):
-                if answer[0][x]['token_str'].lower().strip() in hungarian_question_words:
-                    good_question = masked_question
-                    good_question = good_question.replace(mask_string, answer[0][0]['token_str'], 1)
-                    mask_count = good_question.count(mask_string)
-                    answer = self.unmasker(f"Kérdés: {good_question}\nVálasz: {word}.")
-                    break
-            if good_question:
-                continue
-            good_question = ""
-            masked_question = masked_question.replace(mask_string, answer[0][0]['token_str'], 1)            
-            mask_count = masked_question.count(mask_string)
-            answer = self.unmasker(f"Kérdés: {masked_question}\nVálasz: {word}.")
-
-        if good_question:
-            return good_question
-
         valid_token = self.has_question_candidates(answer)
         if valid_token:
-            return masked_question.replace(word, valid_token)[:-1] + "?"
+            return masked_question.replace(mask_string, valid_token)[:-1] + "?"
         raise Exception(f"No valid solution found: {answer}")
     
     def has_question_candidates(self, answers: list[dict]) -> str | None:
@@ -257,20 +257,33 @@ class WikiYoinker:
             if answer['token_str'].lower() in hungarian_question_words:
                 return answer['token_str']
         return None
-        
+
+    def yoink_one_page(url: str) -> tuple[list, list]:
+        """Yoinks one page and returns the tables and paragraphs for each section
+
+        Args:
+            url (str): the url to yoink stuff
+
+        Returns:
+            tuple[list, list]: _description_
+        """
+        pass
 
 if __name__ == "__main__":
     database = Database("data/generated_hu.db")
     database.empty_database()
     wikiyoinker = WikiYoinker()
     logger: MyLogger = MyLogger(log_path='data/wiki.log', result_path='data/wiki.log')
-    for x in range(1): # TODO forever and maybe with 500 limit, not 2
+    for x in range(500): # TODO forever and maybe with 500 limit, not 2
         req = wikiyoinker.get_next_page()
         tables = wikiyoinker.extract_tables_by_h2(req.url)
         paragraphs = wikiyoinker.extract_paragraphs_by_h2(req.url)
         for skip_section in skip_sections:
-            del tables[skip_section]
-            del paragraphs[skip_section]
+            try:
+                del tables[skip_section]
+                del paragraphs[skip_section]
+            except Exception as e:
+                logger.warn(e)
         for section, paragraph in paragraphs.items():
             paragraph = wikiyoinker.clean_html(paragraph)
             paragraphs[section] = wikiyoinker.convert_paragraph_to_hungarian_notation(paragraph)
@@ -284,8 +297,8 @@ if __name__ == "__main__":
                     try:
                         question = wikiyoinker.transform_statement_to_question(statement, word)
                         logger.info(f"{section}(Szekció)\t{word}(Cella)\t{statement}(Mondat)\t{question}(Kérdés)\n{table_section}\n")
-                        db_name = f'{req.url.split("/")[-1]}:{section}:{index}'
-                        database.generate_questions_table(F, table_section, [(question, word)], if_exists='append')
-                        print("yay")
+                        replaced_url = req.url.split("/")[-1].encode('ascii', 'replace').decode('ascii')
+                        db_name = f'{replaced_url}:{section}:{index}'
+                        database.generate_questions_table(db_name, table_section, [(question, word)], if_exists='append')
                     except Exception as e:
                         logger.debug(e)

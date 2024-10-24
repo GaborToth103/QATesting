@@ -1,0 +1,86 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/24.7.8 Chrome/128.0.6613.36 Electron/32.0.1 Safari/537.36" version="24.7.8">
+  <diagram name="1 oldal" id="1YYB_vPDaQ-iKfjJItYT">
+    <mxGraphModel dx="1389" dy="1011" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="1600" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="reCr0s6BiG_sX1XFupxH-2" value="Crawler" style="swimlane;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="-302" y="-122" width="976" height="218" as="geometry" />
+        </mxCell>
+        <mxCell id="reCr0s6BiG_sX1XFupxH-16" value="" style="edgeStyle=none;curved=1;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=12;startSize=8;endSize=8;" parent="reCr0s6BiG_sX1XFupxH-2" source="reCr0s6BiG_sX1XFupxH-3" target="reCr0s6BiG_sX1XFupxH-15" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="reCr0s6BiG_sX1XFupxH-18" style="edgeStyle=none;curved=1;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=12;startSize=8;endSize=8;" parent="reCr0s6BiG_sX1XFupxH-2" source="reCr0s6BiG_sX1XFupxH-3" target="reCr0s6BiG_sX1XFupxH-17" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="reCr0s6BiG_sX1XFupxH-3" value="Get KSH page" style="rounded=1;whiteSpace=wrap;html=1;" parent="reCr0s6BiG_sX1XFupxH-2" vertex="1">
+          <mxGeometry x="23" y="91" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="reCr0s6BiG_sX1XFupxH-20" style="edgeStyle=none;curved=1;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=12;startSize=8;endSize=8;" parent="reCr0s6BiG_sX1XFupxH-2" source="reCr0s6BiG_sX1XFupxH-15" target="reCr0s6BiG_sX1XFupxH-19" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="reCr0s6BiG_sX1XFupxH-15" value="Get Table Data" style="rounded=1;whiteSpace=wrap;html=1;" parent="reCr0s6BiG_sX1XFupxH-2" vertex="1">
+          <mxGeometry x="189" y="48" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="reCr0s6BiG_sX1XFupxH-21" style="edgeStyle=none;curved=1;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=12;startSize=8;endSize=8;" parent="reCr0s6BiG_sX1XFupxH-2" source="reCr0s6BiG_sX1XFupxH-17" target="reCr0s6BiG_sX1XFupxH-19" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="reCr0s6BiG_sX1XFupxH-17" value="Get Text Data" style="rounded=1;whiteSpace=wrap;html=1;" parent="reCr0s6BiG_sX1XFupxH-2" vertex="1">
+          <mxGeometry x="189" y="138" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="reCr0s6BiG_sX1XFupxH-23" value="" style="edgeStyle=none;curved=1;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=12;startSize=8;endSize=8;" parent="reCr0s6BiG_sX1XFupxH-2" source="reCr0s6BiG_sX1XFupxH-19" target="reCr0s6BiG_sX1XFupxH-22" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="reCr0s6BiG_sX1XFupxH-19" value="Match each cell with text data" style="rounded=1;whiteSpace=wrap;html=1;" parent="reCr0s6BiG_sX1XFupxH-2" vertex="1">
+          <mxGeometry x="345" y="91" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="reCr0s6BiG_sX1XFupxH-25" value="Yes" style="edgeStyle=none;curved=1;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=12;startSize=8;endSize=8;" parent="reCr0s6BiG_sX1XFupxH-2" source="reCr0s6BiG_sX1XFupxH-22" target="reCr0s6BiG_sX1XFupxH-24" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="reCr0s6BiG_sX1XFupxH-22" value="Found Match?" style="rhombus;whiteSpace=wrap;html=1;" parent="reCr0s6BiG_sX1XFupxH-2" vertex="1">
+          <mxGeometry x="524" y="81" width="80" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="reCr0s6BiG_sX1XFupxH-27" value="" style="edgeStyle=none;curved=1;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=12;startSize=8;endSize=8;" parent="reCr0s6BiG_sX1XFupxH-2" source="reCr0s6BiG_sX1XFupxH-24" target="reCr0s6BiG_sX1XFupxH-26" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="reCr0s6BiG_sX1XFupxH-24" value="Transform sentence into Question" style="rounded=1;whiteSpace=wrap;html=1;" parent="reCr0s6BiG_sX1XFupxH-2" vertex="1">
+          <mxGeometry x="649" y="91" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="reCr0s6BiG_sX1XFupxH-28" value="Repeat" style="edgeStyle=none;curved=1;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;fontSize=12;startSize=8;endSize=8;" parent="reCr0s6BiG_sX1XFupxH-2" source="reCr0s6BiG_sX1XFupxH-26" target="reCr0s6BiG_sX1XFupxH-22" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="700" y="204" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="reCr0s6BiG_sX1XFupxH-26" value="Print Question, Cell, Table combo to validate dataset canditate" style="rounded=1;whiteSpace=wrap;html=1;" parent="reCr0s6BiG_sX1XFupxH-2" vertex="1">
+          <mxGeometry x="810" y="91" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="reCr0s6BiG_sX1XFupxH-34" value="Main" style="swimlane;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="-268" y="119" width="200" height="378" as="geometry" />
+        </mxCell>
+        <mxCell id="reCr0s6BiG_sX1XFupxH-30" value="Get_ksh_page() -&amp;gt; tables: list, text: str" style="rounded=1;whiteSpace=wrap;html=1;" parent="reCr0s6BiG_sX1XFupxH-34" vertex="1">
+          <mxGeometry x="41" y="32" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="reCr0s6BiG_sX1XFupxH-31" value="match_table(table, text) -&amp;gt; list(tuple(cell : str, sentence : str))" style="rounded=1;whiteSpace=wrap;html=1;" parent="reCr0s6BiG_sX1XFupxH-34" vertex="1">
+          <mxGeometry x="39" y="106" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="reCr0s6BiG_sX1XFupxH-32" value="transform_sentence(sentence: str,&amp;nbsp;&lt;span style=&quot;background-color: initial;&quot;&gt;mask: str) -&amp;gt; question: str&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;" parent="reCr0s6BiG_sX1XFupxH-34" vertex="1">
+          <mxGeometry x="41" y="187" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="reCr0s6BiG_sX1XFupxH-33" value="print(question, cell, table)" style="rounded=1;whiteSpace=wrap;html=1;" parent="reCr0s6BiG_sX1XFupxH-34" vertex="1">
+          <mxGeometry x="39" y="271" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="qyAPfRYY0-If3j9Cz7S8-2" value="Section" style="swimlane;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="170" y="189" width="200" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="qyAPfRYY0-If3j9Cz7S8-5" value="Paragraph" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=16;" vertex="1" parent="qyAPfRYY0-If3j9Cz7S8-2">
+          <mxGeometry x="7" y="29" width="183" height="83" as="geometry" />
+        </mxCell>
+        <mxCell id="qyAPfRYY0-If3j9Cz7S8-7" value="List of Tables" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="qyAPfRYY0-If3j9Cz7S8-2">
+          <mxGeometry x="16" y="124" width="172" height="60" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
