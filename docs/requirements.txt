@@ -5,6 +5,7 @@ matplotlib
 tqdm
 transformers
 pytest
+openai
 
 # Wikipedia handler
 bs4
