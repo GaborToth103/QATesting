@@ -1,31 +1,24 @@
+import sys
 import os
-from openai import OpenAI
+sys.path.append(f"{os.getcwd()}/src")
+import unittest
+from openai_module import *
 
-def call_openai(user_input: str, model: str = "gpt-3.5-turbo") -> str:
-    """Calls OpenAI API to get answer with a single chat completion input.
-
-    Args:
-        user_input (str): The user input in string format.
-        model (str, optional): The selected model to call with API. Defaults to "gpt-3.5-turbo".
-
-    Returns:
-        str: The answer in string format.
-    """
-    client = OpenAI(
-        api_key=os.environ.get("OPENAI_API_KEY"),
-    )
-
-    chat_completion = client.chat.completions.create(
-        messages=[
-            {
-                "role": "user",
-                "content": user_input,
-            }
-        ],
-        model=model,
-    )
-
-    return chat_completion.choices[0].message.content
+class TestCleanString(unittest.TestCase):
+    def test_call_openai(self):
+        repeat_sentence= "Ez egy teszt."
+        answer: str = call_openai(f"Say: '{repeat_sentence}'")
+        self.assertIn(repeat_sentence, answer)
     
-if __name__ == "__main__":
-    print(call_openai("Say this is a test"))
+    def test_question_generation(self):
+        pairs = [
+            ("A postást Gábornak hívják!", "Gábor"),
+            ("A labda piros.", "piros"),
+            ("11.2 az átlagos hőmérséklet.", "11.2")
+        ]
+        for sentence, answer in pairs:
+            question = generate_question_from_sentence(sentence, answer)
+            self.assertIsNotNone(question)
+            
+if __name__ == '__main__':
+    unittest.main()
