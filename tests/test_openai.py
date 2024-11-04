@@ -17,7 +17,7 @@ class TestCleanString(unittest.TestCase):
             ("11.2 az átlagos hőmérséklet.", "11.2")
         ]
         for sentence, answer in pairs:
-            question = generate_question_from_sentence(sentence, answer)
+            question = generate_question_from_sentence_openai(sentence, answer)
             self.assertIsNotNone(question)
             
 if __name__ == '__main__':

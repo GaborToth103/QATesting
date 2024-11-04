@@ -193,7 +193,7 @@ class Database:
         finally:
             connection.close()
     
-    def generate_questions_table(self, table_name: str, table: pd.DataFrame, qa_pairs: list[tuple[str, list[str]]], if_exists='replace') -> None:
+    def generate_questions_table(self, table_name: str, table: pd.DataFrame, qa_pairs: list[tuple[str, list[str], str, str]], if_exists='replace') -> None:
         """Fills the database with the table name and it's table, with question and aswer pairs belonging to this table 
 
         Args:
@@ -206,6 +206,8 @@ class Database:
             'utterance': [],
             'context': [],
             'targetValue': [],
+            'valid': [],
+            'original': [],
         }
         
         if if_exists == 'replace':
@@ -217,9 +219,11 @@ class Database:
             qa['utterance'].append(qa_pair[0])
             qa['context'].append(table_name)
             qa['targetValue'].append(qa_pair[1])
+            qa['valid'].append(qa_pair[2])
+            qa['original'].append(qa_pair[3])
         qa_table = pd.DataFrame(qa)
                 
-        self.fill_database(table, table_name=table_name, if_exists=if_exists)
+        self.fill_database(table, table_name=table_name, if_exists='replace')
         self.fill_database(qa_table, table_name=self.qa_table_name, if_exists=if_exists)
 
     def empty_database(self):

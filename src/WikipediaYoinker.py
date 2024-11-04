@@ -7,6 +7,8 @@ from typing import Dict, List, Tuple
 from database import Database
 from transformers import pipeline
 from mylogger import MyLogger
+from openai_module import *
+from report import Report
 
 skip_sections = {'Kapcsolódó_szócikkek', 'mw-fr-revisionratings-box'}
 hungarian_question_words = ['ki',
@@ -33,12 +35,29 @@ class Section:
         """A wikipedia section. Process raw section data into a paragraph/list of tables.
 
         Args:
-            section_name (str): _description_
-            raw_section_data (str): _description_
+            section_name (str): The name of the section
+            raw_section_data (str): The raw data to make into a paragraph and list of tables
         """
+        raw_section_data = self.remove_citations(raw_section_data)       
         self.section_name: str = section_name
         self.paragraph: str = self.extract_paragraph(raw_section_data)
         self.list_of_tables: list[pd.DataFrame] = self.extract_tables(raw_section_data)
+        
+    def __str__(self) -> str:
+        return self.section_name
+
+    @staticmethod
+    def remove_citations(html_content):
+        soup = BeautifulSoup(html_content, 'html.parser')
+        for cite in soup.find_all(class_='cite-bracket'):
+            cite.decompose()
+        for cite_ref in soup.find_all('sup', class_='reference'):
+            cite_number = cite_ref.find('span', class_='cite-bracket')
+            if cite_number:
+                cite_number.extract()
+            cite_ref.extract()
+        cleaned_html = str(soup)
+        return cleaned_html
 
     @staticmethod
     def convert_paragraph_to_hungarian_notation(text: str) -> str:
@@ -116,6 +135,8 @@ class WikiYoinker:
         self.unmasker = pipeline('fill-mask', model='xlm-roberta-base')
         self.starting_page_title = starting_page_name
         self.language_code = language_code
+
+
 
     def yoink_page(self, url: str) -> tuple[list[pd.DataFrame], list[str]]:
         """This function should get the whole page and separate tables and the page text as return"""
@@ -336,19 +357,23 @@ class WikiYoinker:
         clean = re.compile('<.*?>')  # This regex pattern finds all HTML tags
         return re.sub(clean, '', text)
     
-    def transform_statement_to_question(self, statement: str, word: str) -> str:        
+    def transform_statement_to_question(self, statement: str, word: str, is_openai: bool = False) -> str:        
         """Given a statement with a word, where the word must be masked and we need to replace dot with questionmark at the end."""
         mask_string = "<mask>"
         masked_question = statement.replace(word, mask_string)[:-1] + "?"
         mask_count = masked_question.count(mask_string)
         if mask_count != 1:
             raise Exception("Multiple answer word found in the sentence.")
-
-        answer = self.unmasker(f"Kérdés: {masked_question}\nVálasz: {word}.")
-        valid_token = self.has_question_candidates(answer)
-        if valid_token:
-            return masked_question.replace(mask_string, valid_token)[:-1] + "?"
-        raise Exception(f"No valid solution found: {answer}")
+        
+        if not is_openai:
+            answer = self.unmasker(f"Kérdés: {masked_question}\nVálasz: {word}.")
+            valid_token = self.has_question_candidates(answer)
+            if valid_token:
+                return masked_question.replace(mask_string, valid_token)[:-1] + "?"
+            raise Exception(f"No valid solution found: {answer}")
+        else:
+            question = generate_question_from_sentence_openai(statement, word)
+            return question
     
     def has_question_candidates(self, answers: list[dict]) -> str | None:
         """Checks if the answer has any token string that is equal to a hungarian question word.
@@ -367,22 +392,26 @@ class WikiYoinker:
     def process_sections(self, sections: list[Section], logger, database):
         for section in sections:
             for index, table_section in enumerate(section.list_of_tables):
-                results = self.find_matching_words(section.paragraph, table_section, strict=False)
+                results = self.find_matching_words(section.paragraph, table_section, strict=is_strict)
                 for result in results:
                     row, col = result['cell_coordinates']
                     statement = result['matching_sentence'].lower().strip()
                     word = str(table_section.iat[row, col]).lower().strip()
                     try:
-                        question = self.transform_statement_to_question(statement, word)
-                        logger.info(f"{section}(Szekció)\t{word}(Cella)\t{statement}(Mondat)\t{question}(Kérdés)\n{table_section}\n")
-                        replaced_url = req.url.split("/")[-1].encode('ascii', 'replace').decode('ascii')
-                        db_name = f'{replaced_url}:{section}:{index}'
-                        database.generate_questions_table(db_name, table_section, [(question, word)], if_exists='append')
+                        question = self.transform_statement_to_question(statement, word, is_openai=use_openai)
+                        valid = True
                     except Exception as e:
                         logger.debug(e)
+                        valid = False
+                        question = "-"
+                    logger.info(f"{section}(Szekció)\t{word}(Cella)\t{statement}(Mondat)\t{question}(Kérdés)\n{table_section}\n")
+                    replaced_url = req.url.split("/")[-1].encode('ascii', 'replace').decode('ascii')
+                    db_name = f'{replaced_url}_{section}_{index}'
+                    database.generate_questions_table(db_name, table_section, [(question, word, valid, statement)], if_exists='append')
 
 if __name__ == "__main__":
-    # TODO launch yoinker from here
+    use_openai = True
+    is_strict = True
     data_path = "data/generated_hu.db"
     starting_page = "Szeged"
     log_path = 'data/wiki.log'
@@ -397,3 +426,4 @@ if __name__ == "__main__":
         req = wikiyoinker.get_next_page()
         sections = wikiyoinker.convert_url_to_section_data(req.url)
         wikiyoinker.process_sections(sections, logger, database)
+    Report().create_report_from_db()
