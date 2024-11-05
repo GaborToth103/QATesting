@@ -3,15 +3,19 @@ import matplotlib.pyplot as plt
 from jinja2 import Environment, FileSystemLoader
 import os
 import sqlite3
+from bs4 import BeautifulSoup
+import shutil
 
 class Report:
-    def __init__(self, data_folder_path: str = "data") -> None:
+    def __init__(self, data_folder_path: str = "/home/gabortoth/Dokumentumok/Projects/QATesting/data") -> None:
         self.data_folder_path: str = data_folder_path
         self.speed_path: str = "speed_plot.png"
         self.accuracy_path: str = "accuracy_plot.png"
         self.report_remplate_path: str = "report_template.html"
         self.report_path: str = "report.html"
-        self.db_path: str = "generated_hu.db"
+        self.db_path: str = f"{self.data_folder_path}/generated_hu.db"
+        shutil.rmtree(f'{data_folder_path}/report')
+        os.makedirs(f'{data_folder_path}/report')
     
     # Read the CSV file
     def read_csv(self, file_path):
@@ -73,46 +77,73 @@ class Report:
         print(f"Report generated: {output_html}")
         
     def create_report_from_db(self):
-        """Create an HTML file in the data folder showing all tables in the SQLite database."""
-        db_path = os.path.join(self.data_folder_path, self.db_path)
-        
-        # Ensure the data folder exists
-        os.makedirs(self.data_folder_path, exist_ok=True)
-
-        # Connect to the SQLite database
-        conn = sqlite3.connect(db_path)
+        # Connect to SQLite Database
+        conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
+        print(self.db_path)
 
-        # Retrieve the list of all tables
+        # Retrieve all table names in the database
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
         tables = cursor.fetchall()
 
-        # Initialize HTML content
-        html_content = "<html><head><title>Database Report</title></head><body>"
-        html_content += "<h1>Database Report</h1>"
+        # List to store table names for the main index page
+        table_links = []
 
-        # Loop through tables and create HTML tables for each
-        for table_name in tables:
-            table_name = table_name[0]  # Get the table name as a string
-            html_content += f"<h2>Table: {table_name}</h2>"
+        # Loop through each table and create an HTML page
+        for table_name_tuple in tables:
+            table_name = table_name_tuple[0]
+            table_filename = f"{table_name}.html"
+            
+            # Load the table into a DataFrame
+            df = pd.read_sql_query(f"SELECT * FROM {table_name}", conn)
+            
+            # Convert DataFrame to HTML table
+            html_table = df.to_html(index=False)
 
-            # Read the table into a DataFrame, using double quotes for the table name
-            query = f'SELECT * FROM "{table_name}"'
-            df = pd.read_sql_query(query, conn)
-            html_content += df.to_html(index=False)  # Convert DataFrame to HTML
+            # Use BeautifulSoup to structure the HTML document
+            soup = BeautifulSoup("<html><head><title>{}</title></head><body></body></html>".format(table_name), "html.parser")
+            
+            # Add table name as header
+            header = soup.new_tag("h1")
+            header.string = f"Table: {table_name}"
+            soup.body.append(header)
+            
+            # Insert the HTML table into the body
+            table_soup = BeautifulSoup(html_table, "html.parser")
+            soup.body.append(table_soup)
+            
+            # Write each table to a separate HTML file
+            with open(f"{self.data_folder_path}/report/{table_filename}", "w", encoding="utf-8") as file:
+                file.write(soup.prettify())
+            
+            # Add a link to this table in the main index
+            table_links.append((table_name, table_filename))
 
-        # Close the database connection
+        # Create the main index page
+        main_soup = BeautifulSoup("<html><head><title>Database Index</title></head><body></body></html>", "html.parser")
+
+        # Add a header for the main page
+        main_header = main_soup.new_tag("h1")
+        main_header.string = "Database Table Index"
+        main_soup.body.append(main_header)
+
+        # Create a list of links
+        for table_name, table_filename in table_links:
+            link_tag = main_soup.new_tag("a", href=table_filename)
+            link_tag.string = f"Table: {table_name}"
+            main_soup.body.append(link_tag)
+            
+            # Add a line break after each link
+            br_tag = main_soup.new_tag("br")
+            main_soup.body.append(br_tag)
+
+        # Write the main index page to an HTML file
+        with open(f"{self.data_folder_path}/report/index.html", "w", encoding="utf-8") as file:
+            file.write(main_soup.prettify())
+
+        # Close the connection
         conn.close()
 
-        # Complete the HTML content
-        html_content += "</body></html>"
-
-        # Write the HTML content to a file
-        report_path = os.path.join(self.data_folder_path, "report.html")
-        with open(report_path, "w") as file:
-            file.write(html_content)
-
-        print(f"Report created at {report_path}")
                 
 if __name__ == '__main__':
     report = Report()

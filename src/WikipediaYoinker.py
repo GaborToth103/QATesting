@@ -131,12 +131,13 @@ class Section:
             return []
 
 class WikiYoinker:
-    def __init__(self, starting_page_name: str = "Szeged", language_code: str = "hu") -> None:
+    def __init__(self,  logger: MyLogger, starting_page_name: str = "Szeged", language_code: str = "hu", use_openai: bool = False, strict: bool = True) -> None:
+        self.logger = logger
+        self.use_openai = use_openai
+        self.strict = strict
         self.unmasker = pipeline('fill-mask', model='xlm-roberta-base')
         self.starting_page_title = starting_page_name
         self.language_code = language_code
-
-
 
     def yoink_page(self, url: str) -> tuple[list[pd.DataFrame], list[str]]:
         """This function should get the whole page and separate tables and the page text as return"""
@@ -301,10 +302,10 @@ class WikiYoinker:
 
         return paragraphs_by_section
 
-    def find_matching_words(self, paragraph: str, table: pd.DataFrame, strict: bool = True) -> List[Dict[str, Tuple[int, int, str]]]:
+    def find_matching_words(self, paragraph: str, table: pd.DataFrame) -> List[Dict[str, Tuple[int, int, str]]]:
         """ takes a paragraph string and a Pandas DataFrame as input and returns a list of coordinate/sentence pairs where words from the DataFrame match words in the paragraph."""
         # Preprocess the paragraph to get sentences and words
-        if strict:
+        if self.strict:
             sentences = re.split(r'(?<=[.!?])\s+', paragraph)  # Split paragraph with less stuff to split by: larger sentences
         else:
             sentences = re.split(r'(?<=[.!?;,])\s+', paragraph)  # Split paragraph into sentences
@@ -357,23 +358,25 @@ class WikiYoinker:
         clean = re.compile('<.*?>')  # This regex pattern finds all HTML tags
         return re.sub(clean, '', text)
     
-    def transform_statement_to_question(self, statement: str, word: str, is_openai: bool = False) -> str:        
+    def transform_statement_to_question(self, statement: str, word: str) -> tuple[str, bool]:        
         """Given a statement with a word, where the word must be masked and we need to replace dot with questionmark at the end."""
         mask_string = "<mask>"
         masked_question = statement.replace(word, mask_string)[:-1] + "?"
         mask_count = masked_question.count(mask_string)
         if mask_count != 1:
-            raise Exception("Multiple answer word found in the sentence.")
+            self.logger.warning("Multiple answer word found in the sentence.")
+            return None, False
         
-        if not is_openai:
+        if not self.use_openai:
             answer = self.unmasker(f"Kérdés: {masked_question}\nVálasz: {word}.")
             valid_token = self.has_question_candidates(answer)
             if valid_token:
                 return masked_question.replace(mask_string, valid_token)[:-1] + "?"
-            raise Exception(f"No valid solution found: {answer}")
+            self.logger.warning(f"No valid solution found: {answer}")
+            return masked_question.replace(mask_string, answer[0]['token_str'].lower())[:-1] + "?", False
         else:
-            question = generate_question_from_sentence_openai(statement, word)
-            return question
+            question, valid = generate_question_from_sentence_openai(statement, word)
+            return question, valid
     
     def has_question_candidates(self, answers: list[dict]) -> str | None:
         """Checks if the answer has any token string that is equal to a hungarian question word.
@@ -389,41 +392,21 @@ class WikiYoinker:
                 return answer['token_str']
         return None
     
-    def process_sections(self, sections: list[Section], logger, database):
+    def process_sections(self, sections: list[Section], logger, database, url: str):
         for section in sections:
             for index, table_section in enumerate(section.list_of_tables):
-                results = self.find_matching_words(section.paragraph, table_section, strict=is_strict)
+                results = self.find_matching_words(section.paragraph, table_section)
                 for result in results:
                     row, col = result['cell_coordinates']
                     statement = result['matching_sentence'].lower().strip()
                     word = str(table_section.iat[row, col]).lower().strip()
                     try:
-                        question = self.transform_statement_to_question(statement, word, is_openai=use_openai)
-                        valid = True
+                        question, valid = self.transform_statement_to_question(statement, word)
                     except Exception as e:
                         logger.debug(e)
                         valid = False
                         question = "-"
                     logger.info(f"{section}(Szekció)\t{word}(Cella)\t{statement}(Mondat)\t{question}(Kérdés)\n{table_section}\n")
-                    replaced_url = req.url.split("/")[-1].encode('ascii', 'replace').decode('ascii')
+                    replaced_url = url.split("/")[-1].encode('ascii', 'replace').decode('ascii')
                     db_name = f'{replaced_url}_{section}_{index}'
                     database.generate_questions_table(db_name, table_section, [(question, word, valid, statement)], if_exists='append')
-
-if __name__ == "__main__":
-    use_openai = True
-    is_strict = True
-    data_path = "data/generated_hu.db"
-    starting_page = "Szeged"
-    log_path = 'data/wiki.log'
-    page_count = 1
-    
-    database = Database(data_path)
-    database.empty_database()
-    logger: MyLogger = MyLogger(log_path=log_path, result_path=log_path)
-    
-    wikiyoinker = WikiYoinker(starting_page_name=starting_page)
-    for x in range(page_count):
-        req = wikiyoinker.get_next_page()
-        sections = wikiyoinker.convert_url_to_section_data(req.url)
-        wikiyoinker.process_sections(sections, logger, database)
-    Report().create_report_from_db()

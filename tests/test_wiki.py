@@ -7,9 +7,18 @@ import unittest
 from WikipediaYoinker import WikiYoinker, Section
 from database import Database
 from mylogger import MyLogger
+from report import Report
 
 class TestWikiYoinker(unittest.TestCase):        
-    wikiyoinker = WikiYoinker()
+    data_path = "data/generated_hu.db"
+    starting_page = "Szeged"
+    log_path = 'data/wiki.log'
+    page_count = 1
+    
+    database = Database(data_path)
+    database.empty_database()
+    logger: MyLogger = MyLogger(log_path=log_path, result_path=log_path)    
+    wikiyoinker = WikiYoinker(starting_page_name=starting_page, use_openai=False, strict=True, logger=logger)
     
     def test_transform_statement_to_question(self):        
         pairs = [
@@ -49,21 +58,11 @@ class TestWikiYoinker(unittest.TestCase):
         self.assertTrue(False)
         
     def test_main(self):
-        # TODO launch yoinker from here
-        data_path = "data/generated_hu.db"
-        starting_page = "Szeged"
-        log_path = 'data/wiki.log'
-        page_count = 1
-        
-        database = Database(data_path)
-        database.empty_database()
-        logger: MyLogger = MyLogger(log_path=log_path, result_path=log_path)
-        
-        wikiyoinker = WikiYoinker(starting_page_name=starting_page)
-        for x in range(page_count):
-            req = wikiyoinker.get_next_page()
-            sections = wikiyoinker.convert_url_to_section_data(req.url)
-            wikiyoinker.process_sections(sections, logger, database)
+        for x in range(self.page_count):
+            req = self.wikiyoinker.get_next_page()
+            sections = self.wikiyoinker.convert_url_to_section_data(req.url)
+            self.wikiyoinker.process_sections(sections, self.logger, self.database, req.url)
+        Report().create_report_from_db()
         self.assertTrue(True)
 
 
