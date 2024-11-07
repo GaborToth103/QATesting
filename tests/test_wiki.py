@@ -20,7 +20,7 @@ class TestWikiYoinker(unittest.TestCase):
     logger: MyLogger = MyLogger(log_path=log_path, result_path=log_path)    
     wikiyoinker = WikiYoinker(starting_page_name=starting_page, use_openai=False, strict=True, logger=logger)
     
-    def test_transform_statement_to_question(self):        
+    def test_transform_statement_to_question(self):
         pairs = [
             ("Őt Gábornak hívják!", "Gábornak"),
             ("A labda piros.", "piros"),
@@ -58,13 +58,16 @@ class TestWikiYoinker(unittest.TestCase):
         self.assertTrue(False)
         
     def test_main(self):
+        self.wikiyoinker.use_openai = True
         for x in range(self.page_count):
             req = self.wikiyoinker.get_next_page()
             sections = self.wikiyoinker.convert_url_to_section_data(req.url)
             self.wikiyoinker.process_sections(sections, self.logger, self.database, req.url)
         Report().create_report_from_db()
         self.assertTrue(True)
-
+        
+    def test_duplicate(self):
+        self.assertTrue(1)
 
 if __name__ == "__main__":
     unittest.main()

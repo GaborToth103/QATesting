@@ -304,6 +304,7 @@ class WikiYoinker:
 
     def find_matching_words(self, paragraph: str, table: pd.DataFrame) -> List[Dict[str, Tuple[int, int, str]]]:
         """ takes a paragraph string and a Pandas DataFrame as input and returns a list of coordinate/sentence pairs where words from the DataFrame match words in the paragraph."""
+        # TODO ha kétszer szerepel ugyanaz a szó a táblázatban, csak az elsőt válasszuk
         # Preprocess the paragraph to get sentences and words
         if self.strict:
             sentences = re.split(r'(?<=[.!?])\s+', paragraph)  # Split paragraph with less stuff to split by: larger sentences
@@ -317,31 +318,32 @@ class WikiYoinker:
         # Store results
         results = []
         
-        # Check each cell in the DataFrame
+        # TODO
+        cell_dict = {}
         for i, row in table.iterrows():
             for j, cell in enumerate(row):
-                # Normalize the cell and check for exact matches
-                cell_str = str(cell).strip().lower()
+                cell_str2 = str(cell).strip().lower()
+                cell_dict[cell_str2] = (i, j)
                 
-                # Check if the cell itself is an exact match with any sentence
-                if cell_str in [s.lower() for s in sentences]:  
+        for cell_str, coordinate in cell_dict.items():
+            if cell_str in [s.lower() for s in sentences]:  
+                for sentence in sentences:
+                    if sentence.lower() == cell_str:
+                        results.append({
+                            'cell_coordinates': coordinate,
+                            'matching_sentence': sentence
+                        })
+
+            else:
+                # Check for any word matches (not complete sentences)
+                if cell_str in words_in_paragraph:
                     for sentence in sentences:
-                        if sentence.lower() == cell_str:
+                        words_in_sentence = set(re.findall(r'\b\w+(?:\.\w+)?\b', sentence.lower()))
+                        if cell_str in words_in_sentence:
                             results.append({
-                                'cell_coordinates': (i, j),
+                                'cell_coordinates': coordinate,
                                 'matching_sentence': sentence
                             })
-
-                else:
-                    # Check for any word matches (not complete sentences)
-                    if cell_str in words_in_paragraph:
-                        for sentence in sentences:
-                            words_in_sentence = set(re.findall(r'\b\w+(?:\.\w+)?\b', sentence.lower()))
-                            if cell_str in words_in_sentence:
-                                results.append({
-                                    'cell_coordinates': (i, j),
-                                    'matching_sentence': sentence
-                                })
 
         return results
     
@@ -364,15 +366,15 @@ class WikiYoinker:
         masked_question = statement.replace(word, mask_string)[:-1] + "?"
         mask_count = masked_question.count(mask_string)
         if mask_count != 1:
-            self.logger.warning("Multiple answer word found in the sentence.")
+            self.logger.debug("Multiple answer word found in the sentence.")
             return None, False
         
         if not self.use_openai:
             answer = self.unmasker(f"Kérdés: {masked_question}\nVálasz: {word}.")
             valid_token = self.has_question_candidates(answer)
             if valid_token:
-                return masked_question.replace(mask_string, valid_token)[:-1] + "?"
-            self.logger.warning(f"No valid solution found: {answer}")
+                return masked_question.replace(mask_string, valid_token)[:-1] + "?", True
+            self.logger.debug(f"No valid solution found: {answer}")
             return masked_question.replace(mask_string, answer[0]['token_str'].lower())[:-1] + "?", False
         else:
             question, valid = generate_question_from_sentence_openai(statement, word)
@@ -392,7 +394,7 @@ class WikiYoinker:
                 return answer['token_str']
         return None
     
-    def process_sections(self, sections: list[Section], logger, database, url: str):
+    def process_sections(self, sections: list[Section], logger, database, url: str, use_only_numbers: bool = False):
         for section in sections:
             for index, table_section in enumerate(section.list_of_tables):
                 results = self.find_matching_words(section.paragraph, table_section)
@@ -400,6 +402,11 @@ class WikiYoinker:
                     row, col = result['cell_coordinates']
                     statement = result['matching_sentence'].lower().strip()
                     word = str(table_section.iat[row, col]).lower().strip()
+                    if use_only_numbers:
+                        try:
+                            float(word)
+                        except:
+                            continue                    
                     try:
                         question, valid = self.transform_statement_to_question(statement, word)
                     except Exception as e:
@@ -410,3 +417,20 @@ class WikiYoinker:
                     replaced_url = url.split("/")[-1].encode('ascii', 'replace').decode('ascii')
                     db_name = f'{replaced_url}_{section}_{index}'
                     database.generate_questions_table(db_name, table_section, [(question, word, valid, statement)], if_exists='append')
+                    
+if __name__ == "__main__":
+    data_path = "data/generated_hu.db"
+    starting_page = "Szeged"
+    log_path = 'data/wiki.log'
+    page_count = 1000
+    
+    database = Database(data_path)
+    database.empty_database()
+    logger: MyLogger = MyLogger(log_path=log_path, result_path=log_path)    
+    wikiyoinker = WikiYoinker(starting_page_name=starting_page, use_openai=False, strict=True, logger=logger)
+    for x in range(page_count):
+        req = wikiyoinker.get_next_page()
+        sections = wikiyoinker.convert_url_to_section_data(req.url)
+        wikiyoinker.process_sections(sections, logger, database, req.url, use_only_numbers=True)
+    from report import Report
+    Report().create_report_from_db()

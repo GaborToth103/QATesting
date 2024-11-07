@@ -33,7 +33,7 @@ def call_openai(prompt: str, model: str = "gpt-3.5-turbo") -> str:
     return answer
         
 
-def generate_question_from_sentence_openai(sentence: str, answer: str) -> str:
+def generate_question_from_sentence_openai(sentence: str, answer: str) -> tuple[str, bool]:
     """Generates a question from a sentence and an answer. The function masks the answer in the sentence and makes it 
 
     Args:
@@ -47,7 +47,9 @@ def generate_question_from_sentence_openai(sentence: str, answer: str) -> str:
         str: the question string.
     """
     prompt = f"Alakítsd át a szöveget úgy, hogy vedd ki belőle a választ és tedd fel úgy kérdésként, hogy arra a válasz a Válasz legyen! #Példa1\nSzöveg:'a kisebbségek közül szerb, német és cigány nemzetiségűnek vallották magukat a legtöbben.'\nVálasz:'cigány'\nMegoldás:'Mely kisebbség vallotta magát a legtöbben a szerb és német mellett?'\n#Példa2\nMondat:'az éves átlagos hőmérséklet 11.2 °c, a csapadék mennyisége pedig az elmúlt százéves átlag alapján 520 mm.'\nVálasz:'11.2'\nMegoldás:'Mennyi az éves átlagos hőmérséklet?'\n\n#A feladat\nHasonlóan oldd meg a problémát! Csak a kérdést írd ki! Ügyelj arra, hogy a válasz ne maradjon benne a kérdésben! Szöveg:'{sentence}'\nVálasz:'{answer}'\n. Csak a megoldást írd!"
+    #gpt-4o
     question = call_openai(prompt)
     if not question.endswith("?"):
+        return question, False
         raise ValueError(f"question must be a question. The output looks like this:\n{question}")
-    return question
+    return question, True
