@@ -9,6 +9,15 @@ from transformers import pipeline
 from mylogger import MyLogger
 from openai_module import *
 from report import Report
+from tqdm import tqdm
+from urllib.parse import unquote
+from unidecode import unidecode
+from enum import Enum, auto
+
+class Algorithm(Enum):
+    OPENAI = auto()
+    ROBERTA = auto()
+
 
 skip_sections = {'Kapcsolódó_szócikkek', 'mw-fr-revisionratings-box'}
 hungarian_question_words = ['ki',
@@ -42,6 +51,11 @@ class Section:
         self.section_name: str = section_name
         self.paragraph: str = self.extract_paragraph(raw_section_data)
         self.list_of_tables: list[pd.DataFrame] = self.extract_tables(raw_section_data)
+        
+    @staticmethod
+    def analyse_subsection():
+        # TODO
+        raise NotImplementedError()
         
     def __str__(self) -> str:
         return self.section_name
@@ -139,6 +153,32 @@ class WikiYoinker:
         self.starting_page_title = starting_page_name
         self.language_code = language_code
 
+    @staticmethod
+    def url_exists_in_canonicals(existing_canonicals: list[str], title: str, language_code: str = "hu") -> bool:
+        """Takes the title (like "Szeged") and constructs the full URL by appending it to the base Wikipedia URL. Checks if the full canonical URL exists in the list existing_canonicals.
+
+        Args:
+            existing_canonicals (list[str]): list of wikipedia titles already processed
+            title (str): the wikipedia title to check
+
+        Returns:
+            bool: whether the url exists or not.
+        """
+        base_url = f"https://{language_code}.wikipedia.org/wiki/"
+        url = base_url + title
+        try:
+            response = requests.get(url, timeout=10)
+            response.raise_for_status()
+            soup = BeautifulSoup(response.text, 'html.parser')
+            canonical_link = soup.find("link", rel="canonical")
+            canonical_url = canonical_link['href'] if canonical_link else url
+        except (requests.RequestException, KeyError):
+            canonical_url = url
+        if canonical_url in existing_canonicals:
+            return True
+        return False
+
+
     def yoink_page(self, url: str) -> tuple[list[pd.DataFrame], list[str]]:
         """This function should get the whole page and separate tables and the page text as return"""
         
@@ -150,6 +190,21 @@ class WikiYoinker:
         sentences = re.sub(r'\[\d+\]', '', text).strip().replace("\n", " ").replace("  ", " ").split(". ")
         return tables, [s.strip() for s in sentences]
 
+    @staticmethod
+    def sectioning(raw_section_data: str) -> list[str]:
+        """Separate sectioning function to be able to be used with string that outputs raw list of header3 data subsets.
+
+        Args:
+            raw_section_data (str): Raw html data subset that represents a Header2 section
+
+        Raises:
+            NotImplementedError: TODO 
+
+        Returns:
+            list[str]: _description_
+        """
+        raise NotImplementedError()
+
     def convert_url_to_section_data(self, url: str) -> list[Section]:
         """Splits URL content into section chunks with section id.
 
@@ -160,14 +215,15 @@ class WikiYoinker:
             list[Section]: list of sections in the url
         """
         response = requests.get(url)
+        text = response.text.replace("–", "-")
 
         # Split the response into chunks by <h2> sections
-        sections = response.text.split('<h2')
+        sections = text.split('<h2')
 
         # Dictionary to store tables by section id
         section_objs: list[Section] = []
 
-        for section in sections[1:]:  # Skip the first chunk since it is before the first <h2>
+        for section in sections[1:-1]:  # Skip the first chunk since it is before the first <h2>
             section = '<h2' + section  # Prepend <h2> to the section again
 
             # Find the ID of the <h2> tag, assuming format <h2 id="section_id">
@@ -190,11 +246,31 @@ class WikiYoinker:
 
         return section_objs
 
-    def get_next_500_page(self) -> list[str]:
-        raise NotImplementedError()
+    @staticmethod
+    def get_next_500_page(starting_page: str, language_code = "hu") -> list[str]:
+        S = requests.Session()
+
+        PARAMS = {
+            "action": "query",
+            "format": "json",
+            "list": "allpages",
+            "apfrom": starting_page,
+            "aplimit": 500,
+        }
+
+        api_url = f"https://{language_code}.wikipedia.org/w/api.php"
+
+        R = S.get(url=api_url, params=PARAMS)
+        data = R.json()
+        titles = []
+        for next_page in data["query"]["allpages"]:
+            title = next_page['title']
+            titles.append(title)
+
+
+        return titles[:-1], titles[-1]
 
     def get_next_page(self) -> requests.Request:
-        api_url = f"https://{self.language_code}.wikipedia.org/w/api.php"
 
         def get_next_page(apfrom: str):
             return apfrom
@@ -209,6 +285,7 @@ class WikiYoinker:
             "aplimit": 2,
         }
 
+        api_url = f"https://{self.language_code}.wikipedia.org/w/api.php"
 
         R = S.get(url=api_url, params=PARAMS)
         data = R.json()
@@ -394,7 +471,7 @@ class WikiYoinker:
                 return answer['token_str']
         return None
     
-    def process_sections(self, sections: list[Section], logger, database, url: str, use_only_numbers: bool = False):
+    def process_sections(self, sections: list[Section], logger, database, url: str, use_only_numbers: bool = False, skip_everything: bool = False):
         for section in sections:
             for index, table_section in enumerate(section.list_of_tables):
                 results = self.find_matching_words(section.paragraph, table_section)
@@ -408,29 +485,100 @@ class WikiYoinker:
                         except:
                             continue                    
                     try:
+                        if skip_everything:
+                            raise Exception("Skipped")
                         question, valid = self.transform_statement_to_question(statement, word)
+                        logger.info(f"{section}(Szekció)\t{word}(Cella)\t{statement}(Mondat)\t{question}(Kérdés)\n{table_section}\n")
                     except Exception as e:
                         logger.debug(e)
                         valid = False
-                        question = "-"
-                    logger.info(f"{section}(Szekció)\t{word}(Cella)\t{statement}(Mondat)\t{question}(Kérdés)\n{table_section}\n")
-                    replaced_url = url.split("/")[-1].encode('ascii', 'replace').decode('ascii')
+                        question = "e"
+                    replaced_url = url.split("/")[-1].replace("–", "-").encode('ascii', 'replace').decode('ascii')
                     db_name = f'{replaced_url}_{section}_{index}'
                     database.generate_questions_table(db_name, table_section, [(question, word, valid, statement)], if_exists='append')
-                    
-if __name__ == "__main__":
+
+
+    def algorithm_generate_question(self, statement: str, answer: str, algorithm_type: Algorithm = Algorithm.ROBERTA) -> str:
+        """Generate question with the selected algorithm based on the statement and an answer.
+
+        Args:
+            statement (str): The statement which is a complete sentence, it makes sense by itself.
+            answer (str): The one word in the statement that is the answer. The algorithm must mask this and must create a question that this might be the answer to it.
+            algorithm_type (Algorithm, optional): The algorithm used to generate a question. Defaults to Algorithm.ROBERTA.
+
+        Raises:
+            NotImplementedError: if the algorithm is not implemented, it throws this error.
+
+        Returns:
+            str: The question in string format.
+        """
+
+        if statement.count(answer) != 1:
+            return "Multiple answer word found in the sentence.", False
+
+        match algorithm_type:
+            case Algorithm.OpenAI:
+                return generate_question_from_sentence_openai(statement, answer)
+            case Algorithm.ROBERTA:
+                mask_string = "<mask>"
+                masked_question = statement.replace(answer, mask_string)[:-1] + "?"               
+                question = self.unmasker(f"Kérdés: {masked_question}\nVálasz: {answer}.")
+                valid_token = self.has_question_candidates(question)
+                if valid_token:
+                    return masked_question.replace(mask_string, valid_token)[:-1] + "?", True
+                self.logger.debug(f"No valid solution found: {question}")
+                return masked_question.replace(mask_string, question[0]['token_str'].lower())[:-1] + "?", False
+
+        raise NotImplementedError(f"{algorithm_type} algorithm handling is not implemented.")
+
+    def algorithm_db_rework(self, database: Database, algorithm_type: Algorithm = Algorithm.ROBERTA):
+        """Select an algorithm and a database, then the algorithm fills the database with questions. The questions will be overwritten!
+
+        Args:
+            database (Database): the database path filled with statements and answers with or without questions.
+            algorithm_type (Algorithm, optional): The algorithm used to fill the database. Defaults to Algorithm.ROBERTA.
+        """
+        qa_table: pd.DataFrame = database.get_qa_table()
+        for index, row in qa_table.iterrows():
+            statement = row['original']
+            answer = row['targetValue']
+            question = self.algorithm_generate_question(statement, answer, algorithm_type)
+            qa_table.loc[index, 'utterance'] = question
+        database.set_qa_table(qa_table)
+
+
+def fill_database():
     data_path = "data/generated_hu.db"
     starting_page = "Szeged"
     log_path = 'data/wiki.log'
-    page_count = 1000
+    batch_count = 7
     
     database = Database(data_path)
     database.empty_database()
     logger: MyLogger = MyLogger(log_path=log_path, result_path=log_path)    
     wikiyoinker = WikiYoinker(starting_page_name=starting_page, use_openai=False, strict=True, logger=logger)
-    for x in range(page_count):
-        req = wikiyoinker.get_next_page()
-        sections = wikiyoinker.convert_url_to_section_data(req.url)
-        wikiyoinker.process_sections(sections, logger, database, req.url, use_only_numbers=True)
-    from report import Report
+    for x in range(batch_count):
+            pages, starting_page = wikiyoinker.get_next_500_page(starting_page, "hu")
+            for page in tqdm(pages, desc=f"batch no. {x}."):
+                try:
+                    page_url = f"https://hu.wikipedia.org/wiki/{page}"
+                    req = requests.get(page_url)
+                    url = unquote(req.url)
+                    sections = wikiyoinker.convert_url_to_section_data(url)
+                    wikiyoinker.process_sections(sections, logger, database, url, skip_everything=True)
+                except Exception as e:
+                    logger.warning(e)
     Report().create_report_from_db()
+    
+def run_algorithm():
+    data_path = "data/generated_hu.db"
+    log_path = 'data/wiki.log'    
+    database = Database(data_path)
+    logger: MyLogger = MyLogger(log_path=log_path, result_path=log_path)    
+    wikiyoinker = WikiYoinker(logger=logger)
+    wikiyoinker.algorithm_db_rework(database, Algorithm.ROBERTA)
+    
+
+if __name__ == "__main__":
+    fill_database()
+    run_algorithm()

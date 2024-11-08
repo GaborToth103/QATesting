@@ -129,6 +129,30 @@ class Database:
                 print(table["Terminals"])
                 exit()
 
+    def get_qa_table(self) -> pd.DataFrame:
+        """Returns the full QA table.
+
+        Returns:
+            pd.DataFrame: The full QA table.
+        """
+        connection = sqlite3.connect(self.path)
+        try:
+            cursor = connection.cursor()
+            query = f"SELECT * FROM {self.qa_table_name}"
+            cursor.execute(query)
+            column_names = [description[0] for description in cursor.description]
+            data_table = cursor.fetchall()
+            return pd.DataFrame(data_table, columns=column_names)
+        finally:
+            connection.close()
+
+    def set_qa_table(self, df: pd.DataFrame):
+        try:
+            conn = sqlite3.connect('example.db')
+            df.to_sql(self.qa_table_name, conn, if_exists='replace', index=False)
+        finally:
+            conn.close()
+
     def get_question_with_table(self, id: str) -> tuple[pd.DataFrame, str, list[str]]:
         """ From the id, get the table, the question and the answer as return values.
 

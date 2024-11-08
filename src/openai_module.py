@@ -1,12 +1,12 @@
 import os
 from openai import OpenAI
 
-def call_openai(prompt: str, model: str = "gpt-3.5-turbo") -> str:
+def call_openai(prompt: str, model: str = "gpt-4o-mini") -> str:
     """Calls OpenAI API to get answer with a single chat completion input.
 
     Args:
         prompt (str): The user input in string format.
-        model (str, optional): The selected model to call with API. Defaults to "gpt-3.5-turbo".
+        model (str, optional): The selected model to call with API. Defaults to "gpt-4o-mini".
 
     Raises:
         TypeError: The return value type must be string.

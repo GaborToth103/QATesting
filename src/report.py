@@ -14,9 +14,10 @@ class Report:
         self.report_remplate_path: str = "report_template.html"
         self.report_path: str = "report.html"
         self.db_path: str = f"{self.data_folder_path}/generated_hu.db"
-        shutil.rmtree(f'{data_folder_path}/report')
-        os.makedirs(f'{data_folder_path}/report')
-    
+        report_folder_path = os.path.join(data_folder_path, 'report')
+        if os.path.exists(report_folder_path):
+            shutil.rmtree(report_folder_path)
+        os.makedirs(report_folder_path)    
     # Read the CSV file
     def read_csv(self, file_path):
         df = pd.read_csv(file_path, delimiter=';')
@@ -95,7 +96,7 @@ class Report:
             table_filename = f"{table_name}.html"
             
             # Load the table into a DataFrame
-            df = pd.read_sql_query(f"SELECT * FROM {table_name}", conn)
+            df = pd.read_sql_query(f'SELECT * FROM "{table_name}"', conn)
             
             # Convert DataFrame to HTML table
             html_table = df.to_html(index=False)

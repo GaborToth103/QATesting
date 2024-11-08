@@ -6,6 +6,7 @@ tqdm
 transformers
 pytest
 openai
+unidecode
 
 # Wikipedia handler
 bs4
