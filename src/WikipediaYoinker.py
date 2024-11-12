@@ -18,7 +18,6 @@ class Algorithm(Enum):
     OPENAI = auto()
     ROBERTA = auto()
 
-
 skip_sections = {'Kapcsolódó_szócikkek', 'mw-fr-revisionratings-box'}
 hungarian_question_words = ['ki',
  'kik',
