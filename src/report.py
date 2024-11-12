@@ -7,13 +7,13 @@ from bs4 import BeautifulSoup
 import shutil
 
 class Report:
-    def __init__(self, data_folder_path: str = "/home/gabortoth/Dokumentumok/Projects/QATesting/data") -> None:
+    def __init__(self, data_folder_path: str = "/home/gabortoth/Dokumentumok/Projects/QATesting/data", db_name: str = "generated_hu.db") -> None:
         self.data_folder_path: str = data_folder_path
         self.speed_path: str = "speed_plot.png"
         self.accuracy_path: str = "accuracy_plot.png"
         self.report_remplate_path: str = "report_template.html"
         self.report_path: str = "report.html"
-        self.db_path: str = f"{self.data_folder_path}/generated_hu.db"
+        self.db_path = os.path.join(data_folder_path, db_name)
         report_folder_path = os.path.join(data_folder_path, 'report')
         if os.path.exists(report_folder_path):
             shutil.rmtree(report_folder_path)

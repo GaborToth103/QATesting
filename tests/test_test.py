@@ -1,12 +1,19 @@
-import sys
-import os
-sys.path.append(f"{os.getcwd()}/src")
-from database import Database
+import pandas as pd
+import sqlite3
 
+# Sample DataFrame
+data = {
+    'name': ['Alice', 'Bob', 'Charlie'],
+    'age': [25, 30, 35],
+    'city': ['New York', 'Los Angeles', 'Chicago']
+}
+df = pd.DataFrame(data)
 
-db = Database("data/generated_hu.db")
-qa_table = db.get_qa_table()
-for index, row in qa_table.iterrows():
-    statement = row['original']
-    answer = row['targetValue']
-    
+# Connect to SQLite database (it will create the database file if it doesn't exist)
+conn = sqlite3.connect('example.db')
+
+# Write the DataFrame to a SQL table
+df.to_sql('people', conn, if_exists='replace', index=False)
+
+# Close the connection
+conn.close()

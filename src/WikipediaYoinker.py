@@ -47,10 +47,11 @@ class Section:
             section_name (str): The name of the section
             raw_section_data (str): The raw data to make into a paragraph and list of tables
         """
-        raw_section_data = self.remove_citations(raw_section_data)       
+        self.raw_section_data = self.remove_citations(raw_section_data)       
         self.section_name: str = section_name
-        self.paragraph: str = self.extract_paragraph(raw_section_data)
-        self.list_of_tables: list[pd.DataFrame] = self.extract_tables(raw_section_data)
+        self.paragraph: str = self.extract_paragraph(self.raw_section_data)
+        self.list_of_tables: list[pd.DataFrame] = self.extract_tables(self.raw_section_data)
+        # self.subsections: Section
         
     @staticmethod
     def analyse_subsection():
@@ -512,16 +513,19 @@ class WikiYoinker:
         Returns:
             str: The question in string format.
         """
+        if len(statement) > 512:
+            self.logger.debug(f"Statement is too long: {statement}")
+            return "Statement is too long.", False   
 
         if statement.count(answer) != 1:
-            return "Multiple answer word found in the sentence.", False
+            return "Multiple answer word found in the sentence.", True
 
         match algorithm_type:
-            case Algorithm.OpenAI:
+            case Algorithm.OPENAI:
                 return generate_question_from_sentence_openai(statement, answer)
             case Algorithm.ROBERTA:
                 mask_string = "<mask>"
-                masked_question = statement.replace(answer, mask_string)[:-1] + "?"               
+                masked_question = statement.replace(answer, mask_string)[:-1] + "?"
                 question = self.unmasker(f"Kérdés: {masked_question}\nVálasz: {answer}.")
                 valid_token = self.has_question_candidates(question)
                 if valid_token:
@@ -539,46 +543,65 @@ class WikiYoinker:
             algorithm_type (Algorithm, optional): The algorithm used to fill the database. Defaults to Algorithm.ROBERTA.
         """
         qa_table: pd.DataFrame = database.get_qa_table()
-        for index, row in qa_table.iterrows():
+        for index, row in tqdm(qa_table.iterrows(), total=qa_table.shape[0], desc="Algorithm filling questions"):
             statement = row['original']
             answer = row['targetValue']
-            question = self.algorithm_generate_question(statement, answer, algorithm_type)
-            qa_table.loc[index, 'utterance'] = question
+            question, valid = self.algorithm_generate_question(statement, answer, algorithm_type)
+            qa_table.at[index, 'utterance'] = question
         database.set_qa_table(qa_table)
 
-
-def fill_database():
+def main():
     data_path = "data/generated_hu.db"
     starting_page = "Szeged"
     log_path = 'data/wiki.log'
-    batch_count = 7
+    batch_count = 4
     
     database = Database(data_path)
-    database.empty_database()
     logger: MyLogger = MyLogger(log_path=log_path, result_path=log_path)    
     wikiyoinker = WikiYoinker(starting_page_name=starting_page, use_openai=False, strict=True, logger=logger)
-    for x in range(batch_count):
-            pages, starting_page = wikiyoinker.get_next_500_page(starting_page, "hu")
-            for page in tqdm(pages, desc=f"batch no. {x}."):
-                try:
-                    page_url = f"https://hu.wikipedia.org/wiki/{page}"
-                    req = requests.get(page_url)
-                    url = unquote(req.url)
-                    sections = wikiyoinker.convert_url_to_section_data(url)
-                    wikiyoinker.process_sections(sections, logger, database, url, skip_everything=True)
-                except Exception as e:
-                    logger.warning(e)
-    Report().create_report_from_db()
+
+    # Fill Database    
+    if False:
+        database.empty_database()
+        for x in range(batch_count):
+                pages, starting_page = wikiyoinker.get_next_500_page(starting_page, "hu")
+                for page in tqdm(pages, desc=f"batch no. {x}."):
+                    try:
+                        page_url = f"https://hu.wikipedia.org/wiki/{page}"
+                        req = requests.get(page_url)
+                        url = unquote(req.url)
+                        sections = wikiyoinker.convert_url_to_section_data(url)
+                        wikiyoinker.process_sections(sections, logger, database, url, skip_everything=True)
+                    except Exception as e:
+                        logger.warning(e)
     
-def run_algorithm():
-    data_path = "data/generated_hu.db"
-    log_path = 'data/wiki.log'    
-    database = Database(data_path)
-    logger: MyLogger = MyLogger(log_path=log_path, result_path=log_path)    
-    wikiyoinker = WikiYoinker(logger=logger)
+    
+    # Database Modifying
     wikiyoinker.algorithm_db_rework(database, Algorithm.ROBERTA)
+    Report(db_name="generated_hu.db").create_report_from_db()
+
+def h3_separation(section: Section):
+    """_summary_
+
+    Raises:
+        NotImplementedError: TODO
+    """
+    print(section.raw_section_data)
+    exit()
+    raise NotImplementedError("Header3 separation is not yet implemented.")
     
 
+def test_h3():
+    """_summary_
+
+    Raises:
+        NotImplementedError: TODO
+    """
+    logger: MyLogger = MyLogger(log_path='data/wiki.log', result_path='data/wiki.log')    
+    wikiyoinker = WikiYoinker(starting_page_name="Szeged", use_openai=False, strict=True, logger=logger)
+    sections = wikiyoinker.convert_url_to_section_data("https://hu.wikipedia.org/wiki/Szeged")
+    h3_separation(sections[3])
+    raise NotImplementedError("Header3 separation is not yet implemented.")
+
 if __name__ == "__main__":
-    fill_database()
-    run_algorithm()
+    test_h3()

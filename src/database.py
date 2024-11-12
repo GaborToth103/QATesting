@@ -148,8 +148,11 @@ class Database:
 
     def set_qa_table(self, df: pd.DataFrame):
         try:
-            conn = sqlite3.connect('example.db')
+            conn = sqlite3.connect(self.path)
             df.to_sql(self.qa_table_name, conn, if_exists='replace', index=False)
+            print(f"Successfully saved QA_Table at {self.path}")
+        except Exception as e:
+            raise e
         finally:
             conn.close()
 
