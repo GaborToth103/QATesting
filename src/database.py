@@ -171,8 +171,7 @@ class Database:
         connection = sqlite3.connect(self.path)
         try:
             cursor = connection.cursor()
-            # HACK
-            query = f"SELECT utterance, context, targetValue FROM {self.qa_table_name} LIMIT 1,{id};"
+            query = f"SELECT utterance, context, targetValue FROM {self.qa_table_name} where id = 'nt-{id}'"
             cursor.execute(query)
             question, data_path, answers = cursor.fetchone()
             cursor = connection.cursor()
