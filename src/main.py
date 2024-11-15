@@ -66,11 +66,11 @@ class Controller:
 if __name__ == "__main__":
     controller = Controller(
         model_list_path='/home/p_tabtg/llama_project/QATesting/data/model_list.csv',
-        data_path='/home/p_tabtg/llama_project/QATesting/data/database.db',
+        data_path='/home/p_tabtg/llama_project/QATesting/data/generated_hu.db',
     )
     controller.loop(
         seed_count=1,
-        question_limit=100,
-        language_en=True,
+        question_limit=1000,
+        language_en=False,
     )
     Report().main()
