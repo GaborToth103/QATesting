@@ -1,6 +1,6 @@
 import pandas as pd
 from database import Database
-from models import ModelLlama, Prompt, ModelTransformer
+from models import ModelLlama, Prompt, ModelTransformer, ModelOpenAI
 from tqdm import tqdm
 from mylogger import MyLogger
 from utilities import *
@@ -52,6 +52,8 @@ class Controller:
                 # evaluation
                 if model_detail[1]['Model type'] == "gguf":
                     model = ModelLlama(url=model_detail[1]['URL'], n_gpu_layers=int(model_detail[1]['Layer offset count']), prompt_format=Prompt(model_detail[1]['Prompt format']))
+                elif model_detail[1]['Model type'] == "openai":
+                    model = ModelOpenAI(url=model_detail[1]['URL'], prompt_format=Prompt(model_detail[1]['Prompt format']))
                 else: 
                     model = ModelTransformer(url=model_detail[1]['URL'], prompt_format=Prompt(model_detail[1]['Prompt format']))
                 results, elapsed_time = self.evaluate_model(
@@ -59,7 +61,7 @@ class Controller:
                     seed_count,
                     question_count_to_ask)
                 # logging
-                self.logger.logging_results("WTQ", question_count_to_ask, language_en, model_detail[1]['Name'], question_count_to_ask/elapsed_time, results)
+                self.logger.logging_results("Research", question_count_to_ask, language_en, model_detail[1]['Name'], question_count_to_ask/elapsed_time, results)
             except ValueError as context_size_violation:
                 self.logger.error(context_size_violation)
 

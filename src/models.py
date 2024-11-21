@@ -8,6 +8,7 @@ from database import Database
 from tqdm import tqdm
 from utilities import *
 import transformers
+import openai_module
 
 class Model:
     def __init__(self, url: str = "None/None") -> None:
@@ -43,6 +44,22 @@ class Model:
     
     def __str__(self) -> str:
         return self.name
+
+class ModelOpenAI(Model):
+    def __init__(self,
+                 url: str,
+                 model_folder_path: str = '/home/p_tabtg/p_tab_llm_scratch/.hfcache/hub',
+                 context_length: int = 32, prompt_format: Prompt = Prompt.LLAMA3, lang_en: bool = True) -> None:
+        super().__init__()
+        self.name = url
+        self.model_path = model_folder_path
+        self.prompt_format = prompt_format
+        self.lang_en = lang_en
+
+    def generate_text(self, index: int, table: str, question: str) -> str:
+        prompt = construct_prompt(index, question, table, self.lang_en, self.prompt_format)
+        total_answer = openai_module.call_openai(prompt, model=self.name)
+        return total_answer
 
 class ModelTransformer(Model):
     def __init__(self,

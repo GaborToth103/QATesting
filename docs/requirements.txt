@@ -7,6 +7,7 @@ transformers
 pytest
 openai
 unidecode
+protobuf
 
 # Wikipedia handler
 bs4
