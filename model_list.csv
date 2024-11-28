@@ -1,0 +1,3 @@
+Name,URL,Model type,Layer offset count,Prompt format
+PuliLumix,NYTK/PULI-LlumiX-32K,transformers,0,1
+SambalingoHungarian,sambanovasystems/SambaLingo-Hungarian-Chat,transformers,0,2
